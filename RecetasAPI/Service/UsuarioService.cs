@@ -3,7 +3,7 @@ using RecetasAPI.Repositories;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace RecetasAPI.Services
+namespace RecetasAPI.Service
 {
     public class UsuarioService : IUsuarioService
     {

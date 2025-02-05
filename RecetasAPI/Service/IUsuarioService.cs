@@ -2,7 +2,7 @@ using RecetasAPI.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace RecetasAPI.Services
+namespace RecetasAPI.Service
 {
     public interface IUsuarioService
     {

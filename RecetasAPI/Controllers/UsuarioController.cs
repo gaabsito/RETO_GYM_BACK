@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using RecetasAPI.Models;
-using RecetasAPI.Services;
+using RecetasAPI.Service;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

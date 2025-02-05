@@ -1,6 +1,6 @@
 using RecetasAPI.Repositories;
 using RecetasAPI.Service;
-using RecetasAPI.Services;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +15,9 @@ builder.Services.AddScoped<IUsuarioRepository>(provider =>
 
 
 // Registrar los servicios
-builder.Services.AddScoped<IUsuarioRepository, UsuarioService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>(); // ✅ CORRECTO
+
+
 
 
 builder.Services.AddControllers();
