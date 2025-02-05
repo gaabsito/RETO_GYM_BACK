@@ -43,30 +43,35 @@ INSERT INTO Ingredientes (Nombre, Descripcion, UnidadPredeterminada) VALUES
 ('Agua', 'Agua natural', 4)
 GO
 
--- Insertar Recetas
-INSERT INTO Recetas (Titulo, Descripcion, TiempoPreparacion, Porciones, Dificultad, AutorID, CategoriaID) VALUES
-('Pan casero', 'Pan básico para principiantes', 120, 8, 'Media', 1, 2),
-('Tarta de manzana', 'Tarta tradicional de manzana', 90, 8, 'Media', 2, 1),
-('Ensalada César', 'Ensalada César clásica', 20, 4, 'Fácil', 3, 3)
-GO
+-- Insertar una receta y sus componentes usando transacción
+BEGIN TRANSACTION
 
--- Insertar Ingredientes por Receta (Pan casero)
-DECLARE @RecetaPanID INT = (SELECT RecetaID FROM Recetas WHERE Titulo = 'Pan casero')
-INSERT INTO RecetaIngredientes (RecetaID, IngredienteID, Cantidad, UnidadID) VALUES
-(@RecetaPanID, (SELECT IngredienteID FROM Ingredientes WHERE Nombre = 'Harina de trigo'), 500, 1),
-(@RecetaPanID, (SELECT IngredienteID FROM Ingredientes WHERE Nombre = 'Agua'), 300, 3),
-(@RecetaPanID, (SELECT IngredienteID FROM Ingredientes WHERE Nombre = 'Sal'), 10, 1),
-(@RecetaPanID, (SELECT IngredienteID FROM Ingredientes WHERE Nombre = 'Levadura'), 7, 1)
-GO
+DECLARE @RecetaPanID INT
 
--- Insertar Pasos de Preparación (Pan casero)
-INSERT INTO PasosPreparacion (RecetaID, NumeroPaso, Descripcion) VALUES
+-- Insertar Receta
+INSERT INTO Recetas (Titulo, Descripcion, TiempoPreparacion, Porciones, Dificultad, AutorID, CategoriaID)
+VALUES ('Pan casero', 'Pan básico para principiantes', 120, 8, 'Media', 1, 2)
+
+SET @RecetaPanID = SCOPE_IDENTITY()
+
+-- Insertar Ingredientes por Receta
+INSERT INTO RecetaIngredientes (RecetaID, IngredienteID, Cantidad, UnidadID)
+SELECT @RecetaPanID, IngredienteID, 500, 1 FROM Ingredientes WHERE Nombre = 'Harina de trigo'
+UNION ALL
+SELECT @RecetaPanID, IngredienteID, 300, 3 FROM Ingredientes WHERE Nombre = 'Agua'
+UNION ALL
+SELECT @RecetaPanID, IngredienteID, 10, 1 FROM Ingredientes WHERE Nombre = 'Sal'
+UNION ALL
+SELECT @RecetaPanID, IngredienteID, 7, 1 FROM Ingredientes WHERE Nombre = 'Levadura'
+
+-- Insertar Pasos de Preparación
+INSERT INTO PasosPreparacion (RecetaID, NumeroPaso, Descripcion)
+VALUES
 (@RecetaPanID, 1, 'Mezclar la harina y la sal en un bowl grande'),
 (@RecetaPanID, 2, 'Disolver la levadura en agua tibia'),
 (@RecetaPanID, 3, 'Incorporar la levadura a los ingredientes secos y amasar por 10 minutos'),
 (@RecetaPanID, 4, 'Dejar reposar la masa por 1 hora'),
 (@RecetaPanID, 5, 'Hornear a 180°C por 45 minutos')
-GO
 
 -- Insertar Etiquetas
 INSERT INTO Etiquetas (Nombre) VALUES
@@ -75,22 +80,22 @@ INSERT INTO Etiquetas (Nombre) VALUES
 ('Bajo en Calorías'),
 ('Rápido'),
 ('Para Niños')
-GO
 
 -- Insertar Relaciones Recetas-Etiquetas
-INSERT INTO RecetaEtiquetas (RecetaID, EtiquetaID) VALUES
-(@RecetaPanID, (SELECT EtiquetaID FROM Etiquetas WHERE Nombre = 'Vegetariano')),
-(@RecetaPanID, (SELECT EtiquetaID FROM Etiquetas WHERE Nombre = 'Para Niños'))
-GO
+INSERT INTO RecetaEtiquetas (RecetaID, EtiquetaID)
+SELECT @RecetaPanID, EtiquetaID FROM Etiquetas WHERE Nombre IN ('Vegetariano', 'Para Niños')
 
 -- Insertar Comentarios
-INSERT INTO Comentarios (RecetaID, UsuarioID, Contenido, Calificacion) VALUES
+INSERT INTO Comentarios (RecetaID, UsuarioID, Contenido, Calificacion)
+VALUES
 (@RecetaPanID, 2, '¡Excelente receta! El pan quedó muy esponjoso', 5),
 (@RecetaPanID, 3, 'Muy fácil de seguir, lo recomiendo', 4)
-GO
 
 -- Insertar Favoritos
-INSERT INTO RecetasFavoritas (UsuarioID, RecetaID) VALUES
+INSERT INTO RecetasFavoritas (UsuarioID, RecetaID)
+VALUES
 (2, @RecetaPanID),
 (3, @RecetaPanID)
+
+COMMIT TRANSACTION
 GO
