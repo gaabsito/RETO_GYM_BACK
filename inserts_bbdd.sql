@@ -1,101 +1,46 @@
-USE RecetasDB
-GO
-
--- Insertar Unidades de Medida
-INSERT INTO UnidadesMedida (Nombre, Abreviatura) VALUES 
-('Gramo', 'g'),
-('Kilogramo', 'kg'),
-('Mililitro', 'ml'),
-('Litro', 'L'),
-('Cucharada', 'cda'),
-('Cucharadita', 'cdta'),
-('Taza', 'tz'),
-('Unidad', 'u'),
-('Pizca', 'pz')
-GO
-
--- Insertar Categorías
-INSERT INTO Categorias (Nombre, Descripcion) VALUES
-('Postres', 'Dulces y postres variados'),
-('Platos Principales', 'Platos fuertes para comidas y cenas'),
-('Ensaladas', 'Platos frescos y saludables'),
-('Sopas', 'Caldos, cremas y sopas'),
-('Bebidas', 'Bebidas y cócteles'),
-('Desayunos', 'Recetas para el desayuno')
-GO
-
 -- Insertar Usuarios
-INSERT INTO Usuarios (Nombre, Apellido, Email, Password) VALUES
-('María', 'González', 'maria@email.com', 'hash123'),
-('Juan', 'Pérez', 'juan@email.com', 'hash456'),
-('Ana', 'Martínez', 'ana@email.com', 'hash789')
+INSERT INTO Usuarios (Nombre, Apellido, Email, Password, FechaRegistro, EstaActivo) VALUES
+('Carlos', 'Pérez', 'carlos@example.com', 'hashed_password_1', GETDATE(), 1),
+('Ana', 'López', 'ana@example.com', 'hashed_password_2', GETDATE(), 1),
+('David', 'García', 'david@example.com', 'hashed_password_3', GETDATE(), 1);
 GO
 
--- Insertar Ingredientes
-INSERT INTO Ingredientes (Nombre, Descripcion, UnidadPredeterminada) VALUES
-('Harina de trigo', 'Harina refinada todo uso', 1),
-('Azúcar', 'Azúcar blanca refinada', 1),
-('Huevos', 'Huevos frescos', 8),
-('Leche', 'Leche entera', 4),
-('Sal', 'Sal de mesa', 1),
-('Aceite de oliva', 'Aceite de oliva extra virgen', 3),
-('Levadura', 'Levadura seca instantánea', 1),
-('Agua', 'Agua natural', 4)
+-- Insertar Entrenamientos
+INSERT INTO Entrenamientos (Titulo, Descripcion, DuracionMinutos, Dificultad, FechaCreacion, Publico, AutorID) VALUES
+('Full Body Express', 'Rutina rápida de cuerpo completo.', 45, 'Media', GETDATE(), 1, 1),
+('Fuerza Máxima Piernas', 'Entrenamiento centrado en fuerza.', 60, 'Difícil', GETDATE(), 1, 2),
+('Hipertrofia Pecho y Tríceps', 'Rutina para desarrollar masa muscular.', 50, 'Media', GETDATE(), 1, 3);
 GO
 
--- Insertar una receta y sus componentes usando transacción
-BEGIN TRANSACTION
+-- Insertar Ejercicios
+INSERT INTO Ejercicios (Nombre, Descripcion, GrupoMuscular, ImagenURL, EquipamientoNecesario) VALUES
+('Sentadilla', 'Ejercicio de piernas y glúteos.', 'Piernas', 'sentadilla.jpg', 1),
+('Press de Banca', 'Ejercicio para el pectoral mayor.', 'Pecho', 'press_banca.jpg', 1),
+('Dominadas', 'Ejercicio para la espalda y bíceps.', 'Espalda', 'dominadas.jpg', 0),
+('Peso Muerto', 'Ejercicio para la cadena posterior.', 'Espalda', 'peso_muerto.jpg', 1),
+('Curl de Bíceps', 'Ejercicio de aislamiento para bíceps.', 'Bíceps', 'curl_biceps.jpg', 1);
+GO
 
-DECLARE @RecetaPanID INT
+-- Insertar Relación Entrenamiento - Ejercicios
+INSERT INTO EntrenamientoEjercicios (EntrenamientoID, EjercicioID, Series, Repeticiones, DescansoSegundos, Notas) VALUES
+(1, 1, 4, 12, 60, 'Mantén la espalda recta'),
+(1, 3, 3, 10, 60, 'Asegúrate de controlar el movimiento'),
+(2, 1, 5, 6, 90, 'Carga máxima sin comprometer la técnica'),
+(2, 4, 4, 8, 90, 'Activa bien los glúteos al levantar'),
+(3, 2, 4, 10, 60, 'No rebotes la barra sobre el pecho'),
+(3, 5, 4, 12, 45, 'Aísla bien el bíceps evitando balanceos');
+GO
 
--- Insertar Receta
-INSERT INTO Recetas (Titulo, Descripcion, TiempoPreparacion, Porciones, Dificultad, AutorID, CategoriaID)
-VALUES ('Pan casero', 'Pan básico para principiantes', 120, 8, 'Media', 1, 2)
+-- Insertar Entrenamientos en Favoritos
+INSERT INTO EntrenamientosFavoritos (UsuarioID, EntrenamientoID, FechaAgregado) VALUES
+(1, 2, GETDATE()),
+(2, 3, GETDATE()),
+(3, 1, GETDATE());
+GO
 
-SET @RecetaPanID = SCOPE_IDENTITY()
-
--- Insertar Ingredientes por Receta
-INSERT INTO RecetaIngredientes (RecetaID, IngredienteID, Cantidad, UnidadID)
-SELECT @RecetaPanID, IngredienteID, 500, 1 FROM Ingredientes WHERE Nombre = 'Harina de trigo'
-UNION ALL
-SELECT @RecetaPanID, IngredienteID, 300, 3 FROM Ingredientes WHERE Nombre = 'Agua'
-UNION ALL
-SELECT @RecetaPanID, IngredienteID, 10, 1 FROM Ingredientes WHERE Nombre = 'Sal'
-UNION ALL
-SELECT @RecetaPanID, IngredienteID, 7, 1 FROM Ingredientes WHERE Nombre = 'Levadura'
-
--- Insertar Pasos de Preparación
-INSERT INTO PasosPreparacion (RecetaID, NumeroPaso, Descripcion)
-VALUES
-(@RecetaPanID, 1, 'Mezclar la harina y la sal en un bowl grande'),
-(@RecetaPanID, 2, 'Disolver la levadura en agua tibia'),
-(@RecetaPanID, 3, 'Incorporar la levadura a los ingredientes secos y amasar por 10 minutos'),
-(@RecetaPanID, 4, 'Dejar reposar la masa por 1 hora'),
-(@RecetaPanID, 5, 'Hornear a 180°C por 45 minutos')
-
--- Insertar Etiquetas
-INSERT INTO Etiquetas (Nombre) VALUES
-('Vegetariano'),
-('Sin Gluten'),
-('Bajo en Calorías'),
-('Rápido'),
-('Para Niños')
-
--- Insertar Relaciones Recetas-Etiquetas
-INSERT INTO RecetaEtiquetas (RecetaID, EtiquetaID)
-SELECT @RecetaPanID, EtiquetaID FROM Etiquetas WHERE Nombre IN ('Vegetariano', 'Para Niños')
-
--- Insertar Comentarios
-INSERT INTO Comentarios (RecetaID, UsuarioID, Contenido, Calificacion)
-VALUES
-(@RecetaPanID, 2, '¡Excelente receta! El pan quedó muy esponjoso', 5),
-(@RecetaPanID, 3, 'Muy fácil de seguir, lo recomiendo', 4)
-
--- Insertar Favoritos
-INSERT INTO RecetasFavoritas (UsuarioID, RecetaID)
-VALUES
-(2, @RecetaPanID),
-(3, @RecetaPanID)
-
-COMMIT TRANSACTION
+-- Insertar Comentarios en Entrenamientos
+INSERT INTO Comentarios (EntrenamientoID, UsuarioID, Contenido, Calificacion, FechaComentario) VALUES
+(1, 2, 'Muy buen entrenamiento, ideal para días ocupados.', 5, GETDATE()),
+(2, 3, 'Me ha costado, pero es excelente para ganar fuerza.', 4, GETDATE()),
+(3, 1, 'Rutina completa y efectiva.', 5, GETDATE());
 GO
