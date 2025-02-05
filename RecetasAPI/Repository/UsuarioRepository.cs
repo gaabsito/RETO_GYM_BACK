@@ -116,13 +116,25 @@ namespace RecetasAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = "DELETE FROM Usuarios WHERE UsuarioID = @Id";
-                using (var command = new SqlCommand(query, connection))
+
+                // Eliminar todas las recetas del usuario
+                string deleteRecetas = "DELETE FROM Recetas WHERE AutorID = @Id";
+                using (var command = new SqlCommand(deleteRecetas, connection))
+                {
+                    command.Parameters.AddWithValue("@Id", id);
+                    await command.ExecuteNonQueryAsync();
+                }
+
+                // Finalmente, eliminar el usuario
+                string deleteUsuario = "DELETE FROM Usuarios WHERE UsuarioID = @Id";
+                using (var command = new SqlCommand(deleteUsuario, connection))
                 {
                     command.Parameters.AddWithValue("@Id", id);
                     await command.ExecuteNonQueryAsync();
                 }
             }
         }
+
+
     }
 }
