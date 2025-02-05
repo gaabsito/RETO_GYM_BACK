@@ -39,7 +39,8 @@ INSERT INTO Ingredientes (Nombre, Descripcion, UnidadPredeterminada) VALUES
 ('Leche', 'Leche entera', 4),
 ('Sal', 'Sal de mesa', 1),
 ('Aceite de oliva', 'Aceite de oliva extra virgen', 3),
-('Levadura', 'Levadura seca instantánea', 1)
+('Levadura', 'Levadura seca instantánea', 1),
+('Agua', 'Agua natural', 4)
 GO
 
 -- Insertar Recetas
