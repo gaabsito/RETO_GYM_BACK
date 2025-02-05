@@ -8,20 +8,15 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("RestauranteDB");
 
 // Registrar los repositorios con la cadena de conexión
-builder.Services.AddScoped<IBebidaRepository>(provider =>
-    new BebidaRepository(connectionString));
+builder.Services.AddScoped<IUsuarioRepository>(provider =>
+    new UsuarioRepository(connectionString));
 
-builder.Services.AddScoped<IPlatoPrincipalRepository>(provider =>
-    new PlatoPrincipalRepository(connectionString));
 
-builder.Services.AddScoped<IPostreRepository>(provider =>
-    new PostreRepository(connectionString));
 
 
 // Registrar los servicios
-builder.Services.AddScoped<IBebidaService, BebidaService>();
-builder.Services.AddScoped<IPostreService, PostreService>();
-builder.Services.AddScoped<IPlatoPrincipalService, PlatoPrincipalService>();
+builder.Services.AddScoped<IUsuarioRepository, UsuarioService>();
+
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
