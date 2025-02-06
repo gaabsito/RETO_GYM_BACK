@@ -1,25 +1,31 @@
 {
   "format": 1,
   "restore": {
-    "/Users/gabsitoo/Documents/GitHub/RETO_GYM_BACK/GymAPI/GymAPI.csproj": {}
+    "C:\\Users\\S2-PC00\\Documents\\GitHub\\RETO_GYM_BACK\\GymAPI\\GymAPI.csproj": {}
   },
   "projects": {
-    "/Users/gabsitoo/Documents/GitHub/RETO_GYM_BACK/GymAPI/GymAPI.csproj": {
+    "C:\\Users\\S2-PC00\\Documents\\GitHub\\RETO_GYM_BACK\\GymAPI\\GymAPI.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/gabsitoo/Documents/GitHub/RETO_GYM_BACK/GymAPI/GymAPI.csproj",
+        "projectUniqueName": "C:\\Users\\S2-PC00\\Documents\\GitHub\\RETO_GYM_BACK\\GymAPI\\GymAPI.csproj",
         "projectName": "GymAPI",
-        "projectPath": "/Users/gabsitoo/Documents/GitHub/RETO_GYM_BACK/GymAPI/GymAPI.csproj",
-        "packagesPath": "/Users/gabsitoo/.nuget/packages/",
-        "outputPath": "/Users/gabsitoo/Documents/GitHub/RETO_GYM_BACK/GymAPI/obj/",
+        "projectPath": "C:\\Users\\S2-PC00\\Documents\\GitHub\\RETO_GYM_BACK\\GymAPI\\GymAPI.csproj",
+        "packagesPath": "C:\\Users\\S2-PC00\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\S2-PC00\\Documents\\GitHub\\RETO_GYM_BACK\\GymAPI\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "/Users/gabsitoo/.nuget/NuGet/NuGet.Config"
+          "C:\\Users\\S2-PC00\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -71,7 +77,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.404/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.302/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
