@@ -7,12 +7,11 @@ INSERT INTO Usuarios (Nombre, Apellido, Email, Password, FechaRegistro, EstaActi
 ('David', 'García', 'david@example.com', 'hashed_password_3', GETDATE(), 1);
 GO
 
--- Insertar Entrenamientos
+-- Insertar entrenamientos con la nueva estructura de Dificultad (VARCHAR en lugar de ENUM o INT)
 INSERT INTO Entrenamientos (Titulo, Descripcion, DuracionMinutos, Dificultad, FechaCreacion, Publico, AutorID) VALUES
 ('Full Body Express', 'Rutina rápida de cuerpo completo.', 45, 'Media', GETDATE(), 1, 1),
 ('Fuerza Máxima Piernas', 'Entrenamiento centrado en fuerza.', 60, 'Difícil', GETDATE(), 1, 2),
-('Hipertrofia Pecho y Tríceps', 'Rutina para desarrollar masa muscular.', 50, 'Media', GETDATE(), 1, 3);
-GO
+('Hipertrofia Pecho y Tríceps', 'Rutina para desarrollar masa muscular.', 50, 'Fácil', GETDATE(), 1, 3);
 
 -- Insertar Ejercicios
 INSERT INTO Ejercicios (Nombre, Descripcion, GrupoMuscular, ImagenURL, EquipamientoNecesario) VALUES

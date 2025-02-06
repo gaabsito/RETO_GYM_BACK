@@ -11,13 +11,14 @@ var connectionString = builder.Configuration.GetConnectionString("GymappDB");
 builder.Services.AddScoped<IUsuarioRepository>(provider =>
     new UsuarioRepository(connectionString));
 
-
+builder.Services.AddScoped<IEntrenamientoRepository>(provider =>
+    new EntrenamientoRepository(connectionString));
 
 
 // Registrar los servicios
 builder.Services.AddScoped<IUsuarioService, UsuarioService>(); // ✅ CORRECTO
 
-
+builder.Services.AddScoped<IEntrenamientoService, EntrenamientoService>(); // ✅ CORRECTO
 
 
 builder.Services.AddControllers();
