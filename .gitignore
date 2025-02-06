@@ -1,6 +1,6 @@
 .vscode
-/RecetasAPI/bin
-/RecetasAPI/obj
+/GymAPI/bin
+/GymAPI/obj
 /GymAPI/obj
 /GymAPI/obj
 GymAPI/obj/Debug/net8.0/GymAPI.AssemblyInfo.cs
