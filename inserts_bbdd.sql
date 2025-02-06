@@ -1,3 +1,5 @@
+USE GymappDB
+GO
 -- Insertar Usuarios
 INSERT INTO Usuarios (Nombre, Apellido, Email, Password, FechaRegistro, EstaActivo) VALUES
 ('Carlos', 'Pérez', 'carlos@example.com', 'hashed_password_1', GETDATE(), 1),
