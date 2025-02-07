@@ -16,6 +16,7 @@ builder.Services.AddScoped<IEntrenamientoRepository>(provider =>
 
 
 
+
 // Registrar los servicios
 builder.Services.AddScoped<IUsuarioService, UsuarioService>(); // ✅ CORRECTO
 
