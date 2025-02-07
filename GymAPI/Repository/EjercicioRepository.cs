@@ -2,10 +2,6 @@ using Microsoft.Data.SqlClient;
 using GymAPI.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-<<<<<<< HEAD
-using Microsoft.Extensions.Configuration;
-=======
->>>>>>> Ejercicio
 
 namespace GymAPI.Repositories
 {
@@ -17,10 +13,7 @@ namespace GymAPI.Repositories
         {
             _connectionString = connectionString;
         }
-<<<<<<< HEAD
-=======
 
->>>>>>> Ejercicio
         public async Task<List<Ejercicio>> GetAllAsync()
         {
             var ejercicios = new List<Ejercicio>();
@@ -62,10 +55,6 @@ namespace GymAPI.Repositories
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Id", id);
-<<<<<<< HEAD
-
-=======
->>>>>>> Ejercicio
                     using (var reader = await command.ExecuteReaderAsync())
                     {
                         if (await reader.ReadAsync())
@@ -112,13 +101,8 @@ namespace GymAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-<<<<<<< HEAD
-                string query = "UPDATE Ejercicios SET Nombre = @Nombre, Descripcion = @Descripcion, GrupoMuscular = @GrupoMuscular, ImagenURL = @ImagenURL, EquipamientoNecesario = @EquipamientoNecesario " +
-                               "WHERE EjercicioID = @Id";
-=======
                 string query = "UPDATE Ejercicios SET Nombre = @Nombre, Descripcion = @Descripcion, GrupoMuscular = @GrupoMuscular, " +
                                "ImagenURL = @ImagenURL, EquipamientoNecesario = @EquipamientoNecesario WHERE EjercicioID = @Id";
->>>>>>> Ejercicio
 
                 using (var command = new SqlCommand(query, connection))
                 {
