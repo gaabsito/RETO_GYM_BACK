@@ -1,80 +1,47 @@
--- Crear base de datos
-CREATE DATABASE GymappDB;
+USE GymappDB
+GO
+-- Insertar Usuarios
+INSERT INTO Usuarios (Nombre, Apellido, Email, Password, FechaRegistro, EstaActivo) VALUES
+('Carlos', 'Pérez', 'carlos@example.com', 'hashed_password_1', GETDATE(), 1),
+('Ana', 'López', 'ana@example.com', 'hashed_password_2', GETDATE(), 1),
+('David', 'García', 'david@example.com', 'hashed_password_3', GETDATE(), 1);
 GO
 
-USE GymappDB;
+-- Insertar entrenamientos con la nueva estructura de Dificultad (VARCHAR en lugar de ENUM o INT)
+INSERT INTO Entrenamientos (Titulo, Descripcion, DuracionMinutos, Dificultad, FechaCreacion, Publico, AutorID) VALUES
+('Full Body Express', 'Rutina rápida de cuerpo completo.', 45, 'Media', GETDATE(), 1, 1),
+('Fuerza Máxima Piernas', 'Entrenamiento centrado en fuerza.', 60, 'Difícil', GETDATE(), 1, 2),
+('Hipertrofia Pecho y Tríceps', 'Rutina para desarrollar masa muscular.', 50, 'Fácil', GETDATE(), 1, 3);
+
+-- Insertar Ejercicios
+INSERT INTO Ejercicios (Nombre, Descripcion, GrupoMuscular, ImagenURL, EquipamientoNecesario) VALUES
+('Sentadilla', 'Ejercicio de piernas y glúteos.', 'Piernas', 'sentadilla.jpg', 1),
+('Press de Banca', 'Ejercicio para el pectoral mayor.', 'Pecho', 'press_banca.jpg', 1),
+('Dominadas', 'Ejercicio para la espalda y bíceps.', 'Espalda', 'dominadas.jpg', 0),
+('Peso Muerto', 'Ejercicio para la cadena posterior.', 'Espalda', 'peso_muerto.jpg', 1),
+('Curl de Bíceps', 'Ejercicio de aislamiento para bíceps.', 'Bíceps', 'curl_biceps.jpg', 1);
 GO
 
--- Tabla de Usuarios
-CREATE TABLE Usuarios (
-    UsuarioID INT IDENTITY(1,1) PRIMARY KEY,
-    Nombre VARCHAR(50) NOT NULL,
-    Apellido VARCHAR(50) NOT NULL,
-    Email VARCHAR(100) UNIQUE NOT NULL,
-    Password VARCHAR(255) NOT NULL,
-    FechaRegistro DATETIME DEFAULT GETDATE(),
-    EstaActivo BIT DEFAULT 1
-);
+-- Insertar Relación Entrenamiento - Ejercicios
+INSERT INTO EntrenamientoEjercicios (EntrenamientoID, EjercicioID, Series, Repeticiones, DescansoSegundos, Notas) VALUES
+(1, 1, 4, 12, 60, 'Mantén la espalda recta'),
+(1, 3, 3, 10, 60, 'Asegúrate de controlar el movimiento'),
+(2, 1, 5, 6, 90, 'Carga máxima sin comprometer la técnica'),
+(2, 4, 4, 8, 90, 'Activa bien los glúteos al levantar'),
+(3, 2, 4, 10, 60, 'No rebotes la barra sobre el pecho'),
+(3, 5, 4, 12, 45, 'Aísla bien el bíceps evitando balanceos');
 GO
 
--- Tabla de Entrenamientos
-CREATE TABLE Entrenamientos (
-    EntrenamientoID INT IDENTITY(1,1) PRIMARY KEY,
-    Titulo VARCHAR(100) NOT NULL,
-    Descripcion VARCHAR(500),
-    DuracionMinutos INT NOT NULL,
-    Dificultad VARCHAR(20) CHECK (Dificultad IN ('Fácil', 'Media', 'Difícil')),
-    FechaCreacion DATETIME DEFAULT GETDATE(),
-    Publico BIT DEFAULT 1, -- Si el entrenamiento es visible para otros usuarios
-    AutorID INT NULL REFERENCES Usuarios(UsuarioID) ON DELETE SET NULL
-);
+-- Insertar Entrenamientos en Favoritos
+INSERT INTO EntrenamientosFavoritos (UsuarioID, EntrenamientoID, FechaAgregado) VALUES
+(1, 2, GETDATE()),
+(2, 3, GETDATE()),
+(3, 1, GETDATE());
 GO
 
--- Tabla de Ejercicios
-CREATE TABLE Ejercicios (
-    EjercicioID INT IDENTITY(1,1) PRIMARY KEY,
-    Nombre VARCHAR(100) NOT NULL,
-    Descripcion VARCHAR(200),
-    GrupoMuscular VARCHAR(50),
-    ImagenURL VARCHAR(255),
-    EquipamientoNecesario BIT DEFAULT 0
-);
-GO
-
--- Tabla de Relación Entrenamiento - Ejercicios
-CREATE TABLE EntrenamientoEjercicios (
-    EntrenamientoID INT REFERENCES Entrenamientos(EntrenamientoID) ON DELETE CASCADE,
-    EjercicioID INT REFERENCES Ejercicios(EjercicioID) ON DELETE CASCADE,
-    Series INT NOT NULL,
-    Repeticiones INT NOT NULL,
-    DescansoSegundos INT NOT NULL,
-    Notas VARCHAR(100),
-    PRIMARY KEY (EntrenamientoID, EjercicioID)
-);
-GO
-
--- Tabla de Favoritos (Usuarios guardan entrenamientos)
-CREATE TABLE EntrenamientosFavoritos (
-    UsuarioID INT REFERENCES Usuarios(UsuarioID) ON DELETE CASCADE,
-    EntrenamientoID INT REFERENCES Entrenamientos(EntrenamientoID) ON DELETE CASCADE,
-    FechaAgregado DATETIME DEFAULT GETDATE(),
-    PRIMARY KEY (UsuarioID, EntrenamientoID)
-);
-GO
-
--- Tabla de Comentarios en Entrenamientos
-CREATE TABLE Comentarios (
-    ComentarioID INT IDENTITY(1,1) PRIMARY KEY,
-    EntrenamientoID INT REFERENCES Entrenamientos(EntrenamientoID) ON DELETE CASCADE,
-    UsuarioID INT NULL REFERENCES Usuarios(UsuarioID) ON DELETE SET NULL,
-    Contenido VARCHAR(500) NOT NULL,
-    Calificacion INT CHECK (Calificacion BETWEEN 1 AND 5),
-    FechaComentario DATETIME DEFAULT GETDATE()
-);
-GO
-
--- Índices para mejorar el rendimiento
-CREATE INDEX IDX_Entrenamientos_Autor ON Entrenamientos(AutorID);
-CREATE INDEX IDX_Comentarios_Entrenamiento ON Comentarios(EntrenamientoID);
-CREATE INDEX IDX_EntrenamientoEjercicios_Entrenamiento ON EntrenamientoEjercicios(EntrenamientoID);
+-- Insertar Comentarios en Entrenamientos
+INSERT INTO Comentarios (EntrenamientoID, UsuarioID, Contenido, Calificacion, FechaComentario) VALUES
+(1, 2, 'Muy buen entrenamiento, ideal para días ocupados.', 5, GETDATE()),
+(2, 3, 'Me ha costado, pero es excelente para ganar fuerza.', 4, GETDATE()),
+(3, 1, 'Rutina completa y efectiva.', 5, GETDATE());
 GO
