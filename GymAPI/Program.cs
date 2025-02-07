@@ -15,10 +15,15 @@ builder.Services.AddScoped<IEntrenamientoRepository>(provider =>
     new EntrenamientoRepository(connectionString));
 
 
-// Registrar los servicios
-builder.Services.AddScoped<IUsuarioService, UsuarioService>(); // ✅ CORRECTO
+builder.Services.AddScoped<IEjercicioRepository>(provider =>
+    new EjercicioRepository(connectionString));
 
-builder.Services.AddScoped<IEntrenamientoService, EntrenamientoService>(); // ✅ CORRECTO
+// Registrar los servicios
+builder.Services.AddScoped<IUsuarioService, UsuarioService>(); 
+
+builder.Services.AddScoped<IEntrenamientoService, EntrenamientoService>(); 
+
+builder.Services.AddScoped<IEjercicioService, EjercicioService>(); 
 
 
 builder.Services.AddControllers();
