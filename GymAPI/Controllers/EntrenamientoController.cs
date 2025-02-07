@@ -1,7 +1,9 @@
+using GymAPI.DTOs;
 using GymAPI.Models;
 using GymAPI.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace GymAPI.Controllers
@@ -19,53 +21,100 @@ namespace GymAPI.Controllers
 
         // Obtener todos los entrenamientos
         [HttpGet]
-        public async Task<ActionResult<List<Entrenamiento>>> GetEntrenamientos()
+        public async Task<ActionResult<List<EntrenamientoDTO>>> GetEntrenamientos()
         {
             var entrenamientos = await _service.GetAllAsync();
-            return Ok(entrenamientos);
+            var entrenamientosDTO = entrenamientos.Select(e => new EntrenamientoDTO
+            {
+                EntrenamientoID = e.EntrenamientoID,
+                Titulo = e.Titulo,
+                Descripcion = e.Descripcion,
+                DuracionMinutos = e.DuracionMinutos,
+                Dificultad = e.Dificultad,
+                FechaCreacion = e.FechaCreacion,
+                Publico = e.Publico,
+                AutorID = e.AutorID
+            }).ToList();
+
+            return Ok(entrenamientosDTO);
         }
 
         // Obtener un entrenamiento por ID
         [HttpGet("{id}")]
-        public async Task<ActionResult<Entrenamiento>> GetEntrenamiento(int id)
+        public async Task<ActionResult<EntrenamientoDTO>> GetEntrenamiento(int id)
         {
             var entrenamiento = await _service.GetByIdAsync(id);
             if (entrenamiento == null)
                 return NotFound();
-            return Ok(entrenamiento);
+
+            var entrenamientoDTO = new EntrenamientoDTO
+            {
+                EntrenamientoID = entrenamiento.EntrenamientoID,
+                Titulo = entrenamiento.Titulo,
+                Descripcion = entrenamiento.Descripcion,
+                DuracionMinutos = entrenamiento.DuracionMinutos,
+                Dificultad = entrenamiento.Dificultad,
+                FechaCreacion = entrenamiento.FechaCreacion,
+                Publico = entrenamiento.Publico,
+                AutorID = entrenamiento.AutorID
+            };
+
+            return Ok(entrenamientoDTO);
         }
 
         // Crear un nuevo entrenamiento
         [HttpPost]
-        public async Task<ActionResult<Entrenamiento>> CreateEntrenamiento([FromBody] Entrenamiento entrenamiento)
+        public async Task<ActionResult<EntrenamientoDTO>> CreateEntrenamiento([FromBody] EntrenamientoCreateDTO entrenamientoDTO)
         {
-            // Validar que la dificultad es una de las permitidas
-            var dificultadesValidas = new HashSet<string> { "Fácil", "Media", "Difícil" };
-            if (!dificultadesValidas.Contains(entrenamiento.Dificultad))
+            var entrenamiento = new Entrenamiento
             {
-                return BadRequest($"La dificultad '{entrenamiento.Dificultad}' no es válida. Usa: 'Fácil', 'Media' o 'Difícil'.");
-            }
+                Titulo = entrenamientoDTO.Titulo,
+                Descripcion = entrenamientoDTO.Descripcion,
+                DuracionMinutos = entrenamientoDTO.DuracionMinutos,
+                Dificultad = entrenamientoDTO.Dificultad,
+                Publico = entrenamientoDTO.Publico,
+                AutorID = entrenamientoDTO.AutorID
+            };
 
             await _service.AddAsync(entrenamiento);
-            return CreatedAtAction(nameof(GetEntrenamiento), new { id = entrenamiento.EntrenamientoID }, entrenamiento);
+
+            return CreatedAtAction(nameof(GetEntrenamiento), new { id = entrenamiento.EntrenamientoID }, new EntrenamientoDTO
+            {
+                EntrenamientoID = entrenamiento.EntrenamientoID,
+                Titulo = entrenamiento.Titulo,
+                Descripcion = entrenamiento.Descripcion,
+                DuracionMinutos = entrenamiento.DuracionMinutos,
+                Dificultad = entrenamiento.Dificultad,
+                FechaCreacion = entrenamiento.FechaCreacion,
+                Publico = entrenamiento.Publico,
+                AutorID = entrenamiento.AutorID
+            });
         }
 
         // Actualizar un entrenamiento
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateEntrenamiento(int id, [FromBody] Entrenamiento updatedEntrenamiento)
+        public async Task<IActionResult> UpdateEntrenamiento(int id, [FromBody] EntrenamientoUpdateDTO entrenamientoDTO)
         {
             var existingEntrenamiento = await _service.GetByIdAsync(id);
             if (existingEntrenamiento == null)
                 return NotFound();
 
-            // Validar que la dificultad es una de las permitidas
-            var dificultadesValidas = new HashSet<string> { "Fácil", "Media", "Difícil" };
-            if (!dificultadesValidas.Contains(updatedEntrenamiento.Dificultad))
-            {
-                return BadRequest($"La dificultad '{updatedEntrenamiento.Dificultad}' no es válida. Usa: 'Fácil', 'Media' o 'Difícil'.");
-            }
+            if (!string.IsNullOrWhiteSpace(entrenamientoDTO.Titulo))
+                existingEntrenamiento.Titulo = entrenamientoDTO.Titulo;
 
-            await _service.UpdateAsync(updatedEntrenamiento);
+            if (!string.IsNullOrWhiteSpace(entrenamientoDTO.Descripcion))
+                existingEntrenamiento.Descripcion = entrenamientoDTO.Descripcion;
+
+            if (entrenamientoDTO.DuracionMinutos.HasValue)
+                existingEntrenamiento.DuracionMinutos = entrenamientoDTO.DuracionMinutos.Value;
+
+            if (!string.IsNullOrWhiteSpace(entrenamientoDTO.Dificultad))
+                existingEntrenamiento.Dificultad = entrenamientoDTO.Dificultad;
+
+            if (entrenamientoDTO.Publico.HasValue)
+                existingEntrenamiento.Publico = entrenamientoDTO.Publico.Value;
+
+            await _service.UpdateAsync(existingEntrenamiento);
             return NoContent();
         }
 
