@@ -18,12 +18,17 @@ builder.Services.AddScoped<IEntrenamientoRepository>(provider =>
 builder.Services.AddScoped<IEjercicioRepository>(provider =>
     new EjercicioRepository(connectionString));
 
+builder.Services.AddScoped<IEntrenamientoEjercicioRepository>(provider =>
+new EntrenamientoEjercicioRepository(connectionString));
+
 // Registrar los servicios
-builder.Services.AddScoped<IUsuarioService, UsuarioService>(); // ✅ CORRECTO
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 
-builder.Services.AddScoped<IEntrenamientoService, EntrenamientoService>(); // ✅ CORRECTO
+builder.Services.AddScoped<IEntrenamientoService, EntrenamientoService>();
 
-builder.Services.AddScoped<IEjercicioService, EjercicioService>(); // ✅ CORRECTO
+builder.Services.AddScoped<IEjercicioService, EjercicioService>();
+
+builder.Services.AddScoped<IEntrenamientoEjercicioService, EntrenamientoEjercicioService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
