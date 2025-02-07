@@ -1,7 +1,9 @@
+using GymAPI.DTOs;
 using GymAPI.Models;
 using GymAPI.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace GymAPI.Controllers
@@ -19,51 +21,95 @@ namespace GymAPI.Controllers
 
         // Obtener todos los ejercicios
         [HttpGet]
-        public async Task<ActionResult<List<Ejercicio>>> GetEjercicios()
+        public async Task<ActionResult<List<EjercicioDTO>>> GetEjercicios()
         {
             var ejercicios = await _service.GetAllAsync();
-            return Ok(ejercicios);
+            var ejerciciosDTO = ejercicios.Select(e => new EjercicioDTO
+            {
+                EjercicioID = e.EjercicioID,
+                Nombre = e.Nombre,
+                Descripcion = e.Descripcion,
+                GrupoMuscular = e.GrupoMuscular,
+                ImagenURL = e.ImagenURL,
+                EquipamientoNecesario = e.EquipamientoNecesario
+            }).ToList();
+
+            return Ok(ejerciciosDTO);
         }
 
         // Obtener un ejercicio por ID
         [HttpGet("{id}")]
-        public async Task<ActionResult<Ejercicio>> GetEjercicio(int id)
+        public async Task<ActionResult<EjercicioDTO>> GetEjercicio(int id)
         {
             var ejercicio = await _service.GetByIdAsync(id);
             if (ejercicio == null)
                 return NotFound();
 
-            return Ok(ejercicio);
+            var ejercicioDTO = new EjercicioDTO
+            {
+                EjercicioID = ejercicio.EjercicioID,
+                Nombre = ejercicio.Nombre,
+                Descripcion = ejercicio.Descripcion,
+                GrupoMuscular = ejercicio.GrupoMuscular,
+                ImagenURL = ejercicio.ImagenURL,
+                EquipamientoNecesario = ejercicio.EquipamientoNecesario
+            };
+
+            return Ok(ejercicioDTO);
         }
 
         // Crear un nuevo ejercicio
         [HttpPost]
-        public async Task<ActionResult<Ejercicio>> CreateEjercicio([FromBody] Ejercicio ejercicio)
+        public async Task<ActionResult<EjercicioDTO>> CreateEjercicio([FromBody] EjercicioCreateDTO dto)
         {
-            if (string.IsNullOrWhiteSpace(ejercicio.Nombre))
+            var ejercicio = new Ejercicio
             {
-                return BadRequest("El nombre del ejercicio es obligatorio.");
-            }
+                Nombre = dto.Nombre,
+                Descripcion = dto.Descripcion,
+                GrupoMuscular = dto.GrupoMuscular,
+                ImagenURL = dto.ImagenURL,
+                EquipamientoNecesario = dto.EquipamientoNecesario
+            };
 
             await _service.AddAsync(ejercicio);
-            return CreatedAtAction(nameof(GetEjercicio), new { id = ejercicio.EjercicioID }, ejercicio);
+
+            var ejercicioDTO = new EjercicioDTO
+            {
+                EjercicioID = ejercicio.EjercicioID,
+                Nombre = ejercicio.Nombre,
+                Descripcion = ejercicio.Descripcion,
+                GrupoMuscular = ejercicio.GrupoMuscular,
+                ImagenURL = ejercicio.ImagenURL,
+                EquipamientoNecesario = ejercicio.EquipamientoNecesario
+            };
+
+            return CreatedAtAction(nameof(GetEjercicio), new { id = ejercicio.EjercicioID }, ejercicioDTO);
         }
 
         // Actualizar un ejercicio
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateEjercicio(int id, [FromBody] Ejercicio updatedEjercicio)
+        public async Task<IActionResult> UpdateEjercicio(int id, [FromBody] EjercicioUpdateDTO dto)
         {
-            if (string.IsNullOrWhiteSpace(updatedEjercicio.Nombre))
-            {
-                return BadRequest("El nombre del ejercicio es obligatorio.");
-            }
-
             var existingEjercicio = await _service.GetByIdAsync(id);
             if (existingEjercicio == null)
                 return NotFound();
 
-            updatedEjercicio.EjercicioID = id; // Asegurar que el ID no cambie
-            await _service.UpdateAsync(updatedEjercicio);
+            if (!string.IsNullOrWhiteSpace(dto.Nombre))
+                existingEjercicio.Nombre = dto.Nombre;
+
+            if (!string.IsNullOrWhiteSpace(dto.Descripcion))
+                existingEjercicio.Descripcion = dto.Descripcion;
+
+            if (!string.IsNullOrWhiteSpace(dto.GrupoMuscular))
+                existingEjercicio.GrupoMuscular = dto.GrupoMuscular;
+
+            if (!string.IsNullOrWhiteSpace(dto.ImagenURL))
+                existingEjercicio.ImagenURL = dto.ImagenURL;
+
+            if (dto.EquipamientoNecesario.HasValue)
+                existingEjercicio.EquipamientoNecesario = dto.EquipamientoNecesario.Value;
+
+            await _service.UpdateAsync(existingEjercicio);
             return NoContent();
         }
 
