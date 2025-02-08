@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using GymAPI.Models;
 
 namespace GymAPI.Services

@@ -2,9 +2,6 @@ using GymAPI.DTOs;
 using GymAPI.Models;
 using GymAPI.Services;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace GymAPI.Controllers
 {

@@ -2,9 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using GymAPI.Models;
 using GymAPI.Services;
 using GymAPI.DTOs;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
 namespace GymAPI.Controllers
 {
     [Route("api/[controller]")]

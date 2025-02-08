@@ -1,7 +1,5 @@
 using Microsoft.Data.SqlClient;
 using GymAPI.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace GymAPI.Repositories
 {
