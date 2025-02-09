@@ -21,6 +21,9 @@ builder.Services.AddScoped<IEjercicioRepository>(provider =>
 builder.Services.AddScoped<IEntrenamientoEjercicioRepository>(provider =>
 new EntrenamientoEjercicioRepository(connectionString));
 
+builder.Services.AddScoped<IComentarioRepository>(provider =>
+new ComentarioRepository(connectionString));
+
 // Registrar los servicios
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 
@@ -29,6 +32,8 @@ builder.Services.AddScoped<IEntrenamientoService, EntrenamientoService>();
 builder.Services.AddScoped<IEjercicioService, EjercicioService>();
 
 builder.Services.AddScoped<IEntrenamientoEjercicioService, EntrenamientoEjercicioService>();
+
+builder.Services.AddScoped<IComentarioService, ComentarioService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
