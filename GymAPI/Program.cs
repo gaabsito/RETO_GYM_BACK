@@ -45,13 +45,16 @@ builder.Services.AddCors(options =>
         builder =>
         {
             builder
-                .WithOrigins("http://localhost:5173") // URL de tu app Vue
+                .WithOrigins("http://localhost:5173")
                 .AllowAnyMethod()
-                .AllowAnyHeader();
+                .AllowAnyHeader()
+                .AllowCredentials();
         });
 });
 
 var app = builder.Build();
+
+app.UseCors("AllowVueApp");
 
 // Configurar Swagger en desarrollo
 if (app.Environment.IsDevelopment())
