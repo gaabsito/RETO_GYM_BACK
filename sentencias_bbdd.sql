@@ -24,8 +24,9 @@ CREATE TABLE Entrenamientos (
     Descripcion VARCHAR(500),
     DuracionMinutos INT NOT NULL,
     Dificultad VARCHAR(20) CHECK (Dificultad IN ('Fácil', 'Media', 'Difícil')),
+    ImagenURL VARCHAR(255), -- Campo añadido para la URL de la imagen
     FechaCreacion DATETIME DEFAULT GETDATE(),
-    Publico BIT DEFAULT 1, -- Si el entrenamiento es visible para otros usuarios
+    Publico BIT DEFAULT 1,
     AutorID INT NULL REFERENCES Usuarios(UsuarioID) ON DELETE SET NULL
 );
 GO
