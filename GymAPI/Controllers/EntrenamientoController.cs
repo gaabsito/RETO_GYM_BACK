@@ -28,6 +28,7 @@ namespace GymAPI.Controllers
                 Descripcion = e.Descripcion,
                 DuracionMinutos = e.DuracionMinutos,
                 Dificultad = e.Dificultad,
+                ImagenURL = e.ImagenURL,
                 FechaCreacion = e.FechaCreacion,
                 Publico = e.Publico,
                 AutorID = e.AutorID
@@ -51,6 +52,7 @@ namespace GymAPI.Controllers
                 Descripcion = entrenamiento.Descripcion,
                 DuracionMinutos = entrenamiento.DuracionMinutos,
                 Dificultad = entrenamiento.Dificultad,
+                ImagenURL = entrenamiento.ImagenURL,
                 FechaCreacion = entrenamiento.FechaCreacion,
                 Publico = entrenamiento.Publico,
                 AutorID = entrenamiento.AutorID
@@ -69,6 +71,7 @@ namespace GymAPI.Controllers
                 Descripcion = entrenamientoDTO.Descripcion,
                 DuracionMinutos = entrenamientoDTO.DuracionMinutos,
                 Dificultad = entrenamientoDTO.Dificultad,
+                ImagenURL = entrenamientoDTO.ImagenURL,
                 Publico = entrenamientoDTO.Publico,
                 AutorID = entrenamientoDTO.AutorID
             };
@@ -82,6 +85,7 @@ namespace GymAPI.Controllers
                 Descripcion = entrenamiento.Descripcion,
                 DuracionMinutos = entrenamiento.DuracionMinutos,
                 Dificultad = entrenamiento.Dificultad,
+                ImagenURL = entrenamiento.ImagenURL,
                 FechaCreacion = entrenamiento.FechaCreacion,
                 Publico = entrenamiento.Publico,
                 AutorID = entrenamiento.AutorID
@@ -107,6 +111,9 @@ namespace GymAPI.Controllers
 
             if (!string.IsNullOrWhiteSpace(entrenamientoDTO.Dificultad))
                 existingEntrenamiento.Dificultad = entrenamientoDTO.Dificultad;
+
+            if (entrenamientoDTO.ImagenURL != null)
+                existingEntrenamiento.ImagenURL = entrenamientoDTO.ImagenURL;
 
             if (entrenamientoDTO.Publico.HasValue)
                 existingEntrenamiento.Publico = entrenamientoDTO.Publico.Value;

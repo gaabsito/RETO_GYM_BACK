@@ -19,6 +19,10 @@ namespace GymAPI.DTOs
         [RegularExpression("Fácil|Media|Difícil", ErrorMessage = "Dificultad debe ser 'Fácil', 'Media' o 'Difícil'.")]
         public string Dificultad { get; set; } = "";
 
+        [Url(ErrorMessage = "Debe proporcionar una URL válida para la imagen.")]
+        [StringLength(255)]
+        public string? ImagenURL { get; set; }
+
         public bool Publico { get; set; } = true;
 
         public int? AutorID { get; set; }

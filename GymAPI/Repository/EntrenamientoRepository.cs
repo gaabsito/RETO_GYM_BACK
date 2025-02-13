@@ -19,8 +19,9 @@ namespace GymAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = "SELECT EntrenamientoID, Titulo, Descripcion, DuracionMinutos, Dificultad, FechaCreacion, Publico, AutorID FROM Entrenamientos";
-                
+                string query = @"SELECT EntrenamientoID, Titulo, Descripcion, DuracionMinutos, 
+                          Dificultad, ImagenURL, FechaCreacion, Publico, AutorID FROM Entrenamientos";
+
                 using (var command = new SqlCommand(query, connection))
                 using (var reader = await command.ExecuteReaderAsync())
                 {
@@ -32,10 +33,11 @@ namespace GymAPI.Repositories
                             Titulo = reader.GetString(1),
                             Descripcion = reader.GetString(2),
                             DuracionMinutos = reader.GetInt32(3),
-                            Dificultad = reader.GetString(4), // Ahora es un string
-                            FechaCreacion = reader.GetDateTime(5),
-                            Publico = reader.GetBoolean(6),
-                            AutorID = reader.IsDBNull(7) ? null : reader.GetInt32(7)
+                            Dificultad = reader.GetString(4),
+                            ImagenURL = reader.IsDBNull(5) ? null : reader.GetString(5),
+                            FechaCreacion = reader.GetDateTime(6),
+                            Publico = reader.GetBoolean(7),
+                            AutorID = reader.IsDBNull(8) ? null : reader.GetInt32(8)
                         });
                     }
                 }
@@ -50,8 +52,10 @@ namespace GymAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = "SELECT EntrenamientoID, Titulo, Descripcion, DuracionMinutos, Dificultad, FechaCreacion, Publico, AutorID FROM Entrenamientos WHERE EntrenamientoID = @Id";
-                
+                string query = @"SELECT EntrenamientoID, Titulo, Descripcion, DuracionMinutos, 
+                          Dificultad, ImagenURL, FechaCreacion, Publico, AutorID 
+                          FROM Entrenamientos WHERE EntrenamientoID = @Id";
+
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Id", id);
@@ -65,10 +69,11 @@ namespace GymAPI.Repositories
                                 Titulo = reader.GetString(1),
                                 Descripcion = reader.GetString(2),
                                 DuracionMinutos = reader.GetInt32(3),
-                                Dificultad = reader.GetString(4), // Ahora es un string
-                                FechaCreacion = reader.GetDateTime(5),
-                                Publico = reader.GetBoolean(6),
-                                AutorID = reader.IsDBNull(7) ? null : reader.GetInt32(7)
+                                Dificultad = reader.GetString(4),
+                                ImagenURL = reader.IsDBNull(5) ? null : reader.GetString(5),
+                                FechaCreacion = reader.GetDateTime(6),
+                                Publico = reader.GetBoolean(7),
+                                AutorID = reader.IsDBNull(8) ? null : reader.GetInt32(8)
                             };
                         }
                     }
@@ -82,14 +87,18 @@ namespace GymAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = "INSERT INTO Entrenamientos (Titulo, Descripcion, DuracionMinutos, Dificultad, Publico, AutorID) VALUES (@Titulo, @Descripcion, @DuracionMinutos, @Dificultad, @Publico, @AutorID)";
-                
+                string query = @"INSERT INTO Entrenamientos (Titulo, Descripcion, DuracionMinutos, 
+                          Dificultad, ImagenURL, Publico, AutorID) 
+                          VALUES (@Titulo, @Descripcion, @DuracionMinutos, @Dificultad, 
+                          @ImagenURL, @Publico, @AutorID)";
+
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Titulo", entrenamiento.Titulo);
                     command.Parameters.AddWithValue("@Descripcion", entrenamiento.Descripcion);
                     command.Parameters.AddWithValue("@DuracionMinutos", entrenamiento.DuracionMinutos);
-                    command.Parameters.AddWithValue("@Dificultad", entrenamiento.Dificultad); // Ahora solo insertamos el string
+                    command.Parameters.AddWithValue("@Dificultad", entrenamiento.Dificultad);
+                    command.Parameters.AddWithValue("@ImagenURL", (object?)entrenamiento.ImagenURL ?? DBNull.Value);
                     command.Parameters.AddWithValue("@Publico", entrenamiento.Publico);
                     command.Parameters.AddWithValue("@AutorID", (object?)entrenamiento.AutorID ?? DBNull.Value);
 
@@ -103,15 +112,24 @@ namespace GymAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = "UPDATE Entrenamientos SET Titulo = @Titulo, Descripcion = @Descripcion, DuracionMinutos = @DuracionMinutos, Dificultad = @Dificultad, Publico = @Publico, AutorID = @AutorID WHERE EntrenamientoID = @Id";
-                
+                string query = @"UPDATE Entrenamientos 
+                          SET Titulo = @Titulo, 
+                              Descripcion = @Descripcion, 
+                              DuracionMinutos = @DuracionMinutos, 
+                              Dificultad = @Dificultad,
+                              ImagenURL = @ImagenURL, 
+                              Publico = @Publico, 
+                              AutorID = @AutorID 
+                          WHERE EntrenamientoID = @Id";
+
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Id", entrenamiento.EntrenamientoID);
                     command.Parameters.AddWithValue("@Titulo", entrenamiento.Titulo);
                     command.Parameters.AddWithValue("@Descripcion", entrenamiento.Descripcion);
                     command.Parameters.AddWithValue("@DuracionMinutos", entrenamiento.DuracionMinutos);
-                    command.Parameters.AddWithValue("@Dificultad", entrenamiento.Dificultad); // Ahora es un string
+                    command.Parameters.AddWithValue("@Dificultad", entrenamiento.Dificultad);
+                    command.Parameters.AddWithValue("@ImagenURL", (object?)entrenamiento.ImagenURL ?? DBNull.Value);
                     command.Parameters.AddWithValue("@Publico", entrenamiento.Publico);
                     command.Parameters.AddWithValue("@AutorID", (object?)entrenamiento.AutorID ?? DBNull.Value);
 
@@ -126,7 +144,7 @@ namespace GymAPI.Repositories
             {
                 await connection.OpenAsync();
                 string query = "DELETE FROM Entrenamientos WHERE EntrenamientoID = @Id";
-                
+
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Id", id);
