@@ -27,6 +27,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // Registrar JwtSettings como servicio
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 
+// Configurar EmailSettings
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 // Obtener la cadena de conexión desde el archivo de configuración
 var connectionString = builder.Configuration.GetConnectionString("GymappDB");
 

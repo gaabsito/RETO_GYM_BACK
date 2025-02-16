@@ -18,11 +18,13 @@ namespace GymAPI.Controllers
     {
         private readonly IUsuarioService _userService;
         private readonly JwtSettings _jwtSettings;
+        private readonly IEmailService _emailService;
 
-        public AuthController(IUsuarioService userService, IOptions<JwtSettings> jwtSettings)
+        public AuthController(IUsuarioService userService, IOptions<JwtSettings> jwtSettings, IEmailService emailService)
         {
             _userService = userService;
             _jwtSettings = jwtSettings.Value;
+            _emailService = emailService;
         }
 
         [HttpPost("register")]
@@ -136,19 +138,24 @@ namespace GymAPI.Controllers
                 var user = await _userService.GetByEmailAsync(resetDto.Email.ToLower());
                 if (user == null)
                 {
-                    // Retornamos 200 por seguridad, para no revelar si el email existe
                     return Ok(new { message = "Si el email existe, recibirás instrucciones para recuperar tu contraseña" });
                 }
 
-                // Generar token único
-                var token = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("/", "_").Replace("+", "-");
+                var token = Convert.ToBase64String(Guid.NewGuid().ToByteArray())
+                    .Replace("/", "_")
+                    .Replace("+", "-");
                 var expires = DateTime.UtcNow.AddHours(1);
 
                 await _userService.UpdateResetTokenAsync(user.UsuarioID, token, expires);
 
-                // Aquí deberías enviar el email con el token
-                // Por ahora, solo retornamos el token
-                return Ok(new { message = "Token generado", token });
+                // Enviar email
+                await _emailService.SendPasswordResetEmailAsync(
+                    user.Email,
+                    $"{user.Nombre} {user.Apellido}",
+                    token
+                );
+
+                return Ok(new { message = "Se han enviado las instrucciones a tu correo electrónico" });
             }
             catch (Exception ex)
             {
