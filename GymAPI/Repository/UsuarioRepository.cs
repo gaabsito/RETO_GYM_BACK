@@ -3,7 +3,7 @@ using GymAPI.Models;
 
 namespace GymAPI.Repositories
 {
-public class UsuarioRepository : IUsuarioRepository
+    public class UsuarioRepository : IUsuarioRepository
     {
         private readonly string _connectionString;
 
@@ -63,6 +63,37 @@ public class UsuarioRepository : IUsuarioRepository
                                 Email = reader.GetString(3),
                                 FechaRegistro = reader.GetDateTime(4),
                                 EstaActivo = reader.GetBoolean(5)
+                            };
+                        }
+                    }
+                }
+            }
+            return usuario;
+        }
+
+        public async Task<Usuario?> GetByEmailAsync(string email)
+        {
+            Usuario? usuario = null;
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                string query = "SELECT UsuarioID, Nombre, Apellido, Email, Password, FechaRegistro, EstaActivo FROM Usuarios WHERE Email = @Email";
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Email", email);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            usuario = new Usuario
+                            {
+                                UsuarioID = reader.GetInt32(0),
+                                Nombre = reader.GetString(1),
+                                Apellido = reader.GetString(2),
+                                Email = reader.GetString(3),
+                                Password = reader.GetString(4),
+                                FechaRegistro = reader.GetDateTime(5),
+                                EstaActivo = reader.GetBoolean(6)
                             };
                         }
                     }
