@@ -13,7 +13,9 @@ CREATE TABLE Usuarios (
     Email VARCHAR(100) UNIQUE NOT NULL,
     Password VARCHAR(255) NOT NULL,
     FechaRegistro DATETIME DEFAULT GETDATE(),
-    EstaActivo BIT DEFAULT 1
+    EstaActivo BIT DEFAULT 1,
+    ResetPasswordToken NVARCHAR(MAX),
+    ResetPasswordExpires DATETIME
 );
 GO
 

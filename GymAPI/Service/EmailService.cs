@@ -42,7 +42,7 @@ namespace GymAPI.Services
                 <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
                 <br>
                 <p>Saludos,</p>
-                <p>El equipo de GymApp</p>";
+                <p>El equipo de ENTRÉNATE</p>";
 
             message.Body = bodyBuilder.ToMessageBody();
 
