@@ -41,5 +41,15 @@ namespace GymAPI.Services
         {
             await _repository.DeleteAsync(id);
         }
+
+        public async Task UpdateResetTokenAsync(int userId, string? token, DateTime? expires)
+        {
+            await _repository.UpdateResetTokenAsync(userId, token, expires);
+        }
+
+        public async Task<Usuario?> GetByResetTokenAsync(string token)
+        {
+            return await _repository.GetByResetTokenAsync(token);
+        }
     }
 }

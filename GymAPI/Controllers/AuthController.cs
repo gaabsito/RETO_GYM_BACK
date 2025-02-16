@@ -128,6 +128,60 @@ namespace GymAPI.Controllers
             }
         }
 
+        [HttpPost("request-reset")]
+        public async Task<IActionResult> RequestPasswordReset(RequestPasswordResetDTO resetDto)
+        {
+            try
+            {
+                var user = await _userService.GetByEmailAsync(resetDto.Email.ToLower());
+                if (user == null)
+                {
+                    // Retornamos 200 por seguridad, para no revelar si el email existe
+                    return Ok(new { message = "Si el email existe, recibirás instrucciones para recuperar tu contraseña" });
+                }
+
+                // Generar token único
+                var token = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("/", "_").Replace("+", "-");
+                var expires = DateTime.UtcNow.AddHours(1);
+
+                await _userService.UpdateResetTokenAsync(user.UsuarioID, token, expires);
+
+                // Aquí deberías enviar el email con el token
+                // Por ahora, solo retornamos el token
+                return Ok(new { message = "Token generado", token });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al procesar la solicitud" });
+            }
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordDTO resetDto)
+        {
+            try
+            {
+                var user = await _userService.GetByResetTokenAsync(resetDto.Token);
+                if (user == null || user.ResetPasswordExpires < DateTime.UtcNow)
+                {
+                    return BadRequest(new { message = "Token inválido o expirado" });
+                }
+
+                // Actualizar contraseña
+                user.Password = BCrypt.Net.BCrypt.HashPassword(resetDto.Password);
+                user.ResetPasswordToken = null;
+                user.ResetPasswordExpires = null;
+
+                await _userService.UpdateAsync(user);
+
+                return Ok(new { message = "Contraseña actualizada correctamente" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al restablecer la contraseña" });
+            }
+        }
+
         [Authorize]
         [HttpGet("verify")]
         public async Task<ActionResult<AuthResponseDTO>> VerifyToken()

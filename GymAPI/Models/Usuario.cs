@@ -10,6 +10,9 @@ namespace GymAPI.Models
         public string Email { get; set; } = "";
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
         public bool EstaActivo { get; set; } = true;
+
+        public string? ResetPasswordToken { get; set; }
+        public DateTime? ResetPasswordExpires { get; set; }
         
         [JsonIgnore]
         public string Password { get; set; } = "";
