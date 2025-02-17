@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using GymAPI.Models;
 using GymAPI.Services;
 using GymAPI.DTOs;
+using System.Security.Claims;
+
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -112,5 +114,43 @@ namespace GymAPI.Controllers
             await _service.DeleteAsync(id);
             return NoContent();
         }
+
+
+        
+
+
+
+         [HttpGet("profile")]
+    public async Task<ActionResult<UsuarioDTO>> GetUserProfile()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            return Unauthorized(new { message = "Usuario no autenticado" });
+        }
+
+        if (!int.TryParse(userIdClaim, out int userId))
+        {
+            return BadRequest(new { message = "ID de usuario no válido" });
+        }
+
+        var usuario = await _service.GetByIdAsync(userId);
+        if (usuario == null)
+        {
+            return NotFound(new { message = "Usuario no encontrado" });
+        }
+
+        var usuarioDTO = new UsuarioDTO
+        {
+            UsuarioID = usuario.UsuarioID,
+            Nombre = usuario.Nombre,
+            Apellido = usuario.Apellido,
+            Email = usuario.Email,
+            FechaRegistro = usuario.FechaRegistro,
+            EstaActivo = usuario.EstaActivo
+        };
+
+        return Ok(usuarioDTO);
+    }
     }
 }
