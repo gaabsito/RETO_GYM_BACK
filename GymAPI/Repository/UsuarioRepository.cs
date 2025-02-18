@@ -97,14 +97,13 @@ public class UsuarioRepository : IUsuarioRepository
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = "UPDATE Usuarios SET Nombre = @Nombre, Apellido = @Apellido, Email = @Email, Password = @Password, EstaActivo = @EstaActivo WHERE UsuarioID = @Id";
+                string query = "UPDATE Usuarios SET Nombre = @Nombre, Apellido = @Apellido, Email = @Email,EstaActivo = @EstaActivo WHERE UsuarioID = @Id";
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Id", usuario.UsuarioID);
                     command.Parameters.AddWithValue("@Nombre", usuario.Nombre);
                     command.Parameters.AddWithValue("@Apellido", usuario.Apellido);
                     command.Parameters.AddWithValue("@Email", usuario.Email);
-                    command.Parameters.AddWithValue("@Password", usuario.Password);
                     command.Parameters.AddWithValue("@EstaActivo", usuario.EstaActivo);
                     await command.ExecuteNonQueryAsync();
                 }
