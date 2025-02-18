@@ -188,4 +188,8 @@ namespace GymAPI.Controllers
     }
 
     }
+<<<<<<< Updated upstream
 }
+=======
+}
+>>>>>>> Stashed changes
