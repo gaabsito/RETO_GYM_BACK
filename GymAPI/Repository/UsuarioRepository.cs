@@ -1,12 +1,9 @@
 using Microsoft.Data.SqlClient;
 using GymAPI.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 
 namespace GymAPI.Repositories
 {
-public class UsuarioRepository : IUsuarioRepository
+    public class UsuarioRepository : IUsuarioRepository
     {
         private readonly string _connectionString;
 
@@ -50,7 +47,8 @@ public class UsuarioRepository : IUsuarioRepository
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = "SELECT UsuarioID, Nombre, Apellido, Email, FechaRegistro, EstaActivo FROM Usuarios WHERE UsuarioID = @Id";
+                string query = @"SELECT UsuarioID, Nombre, Apellido, Email, Password, 
+                      FechaRegistro, EstaActivo FROM Usuarios WHERE UsuarioID = @Id";
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Id", id);
@@ -64,8 +62,98 @@ public class UsuarioRepository : IUsuarioRepository
                                 Nombre = reader.GetString(1),
                                 Apellido = reader.GetString(2),
                                 Email = reader.GetString(3),
-                                FechaRegistro = reader.GetDateTime(4),
-                                EstaActivo = reader.GetBoolean(5)
+                                Password = reader.GetString(4),
+                                FechaRegistro = reader.GetDateTime(5),
+                                EstaActivo = reader.GetBoolean(6)
+                            };
+                        }
+                    }
+                }
+            }
+            return usuario;
+        }
+
+        public async Task<Usuario?> GetByEmailAsync(string email)
+        {
+            Usuario? usuario = null;
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                string query = @"SELECT UsuarioID, Nombre, Apellido, Email, Password, 
+                        FechaRegistro, EstaActivo, ResetPasswordToken, ResetPasswordExpires 
+                        FROM Usuarios WHERE Email = @Email";
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Email", email);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            usuario = new Usuario
+                            {
+                                UsuarioID = reader.GetInt32(0),
+                                Nombre = reader.GetString(1),
+                                Apellido = reader.GetString(2),
+                                Email = reader.GetString(3),
+                                Password = reader.GetString(4),
+                                FechaRegistro = reader.GetDateTime(5),
+                                EstaActivo = reader.GetBoolean(6),
+                                ResetPasswordToken = reader.IsDBNull(7) ? null : reader.GetString(7),
+                                ResetPasswordExpires = reader.IsDBNull(8) ? null : reader.GetDateTime(8)
+                            };
+                        }
+                    }
+                }
+            }
+            return usuario;
+        }
+
+        public async Task UpdateResetTokenAsync(int userId, string? token, DateTime? expires)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                string query = @"UPDATE Usuarios 
+                        SET ResetPasswordToken = @Token, 
+                            ResetPasswordExpires = @Expires 
+                        WHERE UsuarioID = @UserId";
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@UserId", userId);
+                    command.Parameters.AddWithValue("@Token", token as object ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@Expires", expires as object ?? DBNull.Value);
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
+        public async Task<Usuario?> GetByResetTokenAsync(string token)
+        {
+            Usuario? usuario = null;
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                string query = @"SELECT UsuarioID, Nombre, Apellido, Email, Password, 
+                        FechaRegistro, EstaActivo, ResetPasswordToken, ResetPasswordExpires 
+                        FROM Usuarios WHERE ResetPasswordToken = @Token";
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Token", token);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            usuario = new Usuario
+                            {
+                                UsuarioID = reader.GetInt32(0),
+                                Nombre = reader.GetString(1),
+                                Apellido = reader.GetString(2),
+                                Email = reader.GetString(3),
+                                Password = reader.GetString(4),
+                                FechaRegistro = reader.GetDateTime(5),
+                                EstaActivo = reader.GetBoolean(6),
+                                ResetPasswordToken = reader.IsDBNull(7) ? null : reader.GetString(7),
+                                ResetPasswordExpires = reader.IsDBNull(8) ? null : reader.GetDateTime(8)
                             };
                         }
                     }

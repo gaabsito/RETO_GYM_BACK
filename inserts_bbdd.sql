@@ -1,17 +1,17 @@
 USE GymappDB
 GO
 -- Insertar Usuarios
-INSERT INTO Usuarios (Nombre, Apellido, Email, Password, FechaRegistro, EstaActivo) VALUES
-('Carlos', 'Pérez', 'carlos@example.com', 'hashed_password_1', GETDATE(), 1),
-('Ana', 'López', 'ana@example.com', 'hashed_password_2', GETDATE(), 1),
-('David', 'García', 'david@example.com', 'hashed_password_3', GETDATE(), 1);
+INSERT INTO Usuarios (Nombre, Apellido, Email, Password, FechaRegistro, EstaActivo, ResetPasswordToken, ResetPasswordExpires) VALUES
+('Carlos', 'Pérez', 'carlos@example.com', 'hashed_password_1', GETDATE(), 1, NULL, NULL),
+('Ana', 'López', 'ana@example.com', 'hashed_password_2', GETDATE(), 1, NULL, NULL),
+('David', 'García', 'david@example.com', 'hashed_password_3', GETDATE(), 1, NULL, NULL);
 GO
 
--- Insertar entrenamientos con la nueva estructura de Dificultad (VARCHAR en lugar de ENUM o INT)
-INSERT INTO Entrenamientos (Titulo, Descripcion, DuracionMinutos, Dificultad, FechaCreacion, Publico, AutorID) VALUES
-('Full Body Express', 'Rutina rápida de cuerpo completo.', 45, 'Media', GETDATE(), 1, 1),
-('Fuerza Máxima Piernas', 'Entrenamiento centrado en fuerza.', 60, 'Difícil', GETDATE(), 1, 2),
-('Hipertrofia Pecho y Tríceps', 'Rutina para desarrollar masa muscular.', 50, 'Fácil', GETDATE(), 1, 3);
+-- Insertar Entrenamientos
+INSERT INTO Entrenamientos (Titulo, Descripcion, DuracionMinutos, Dificultad, ImagenURL, FechaCreacion, Publico, AutorID) VALUES
+('Full Body Express', 'Rutina rápida de cuerpo completo.', 45, 'Media', 'https://darebee.com/images/workouts/muscles/air-force-workout.jpg', GETDATE(), 1, 1),
+('Fuerza Máxima Piernas', 'Entrenamiento centrado en fuerza.', 60, 'Difícil', 'https://darebee.com/images/workouts/muscles/glutes-and-quads-workout.jpg', GETDATE(), 1, 2),
+('Hipertrofia Pecho y Tríceps', 'Rutina para desarrollar masa muscular.', 50, 'Fácil', 'https://darebee.com/images/workouts/muscles/pushup-party-workout.jpg', GETDATE(), 1, 3);
 
 -- Insertar Ejercicios
 INSERT INTO Ejercicios (Nombre, Descripcion, GrupoMuscular, ImagenURL, EquipamientoNecesario) VALUES

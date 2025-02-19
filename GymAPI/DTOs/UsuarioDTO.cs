@@ -1,5 +1,3 @@
-using System;
-
 namespace GymAPI.DTOs
 {
     public class UsuarioDTO

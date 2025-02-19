@@ -1,7 +1,5 @@
 using GymAPI.Models;
 using GymAPI.Repositories;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace GymAPI.Services
 {
@@ -24,6 +22,11 @@ namespace GymAPI.Services
             return await _repository.GetByIdAsync(id);
         }
 
+        public async Task<Usuario?> GetByEmailAsync(string email)
+        {
+            return await _repository.GetByEmailAsync(email);
+        }
+
         public async Task AddAsync(Usuario usuario)
         {
             await _repository.AddAsync(usuario);
@@ -37,6 +40,16 @@ namespace GymAPI.Services
         public async Task DeleteAsync(int id)
         {
             await _repository.DeleteAsync(id);
+        }
+
+        public async Task UpdateResetTokenAsync(int userId, string? token, DateTime? expires)
+        {
+            await _repository.UpdateResetTokenAsync(userId, token, expires);
+        }
+
+        public async Task<Usuario?> GetByResetTokenAsync(string token)
+        {
+            return await _repository.GetByResetTokenAsync(token);
         }
     }
 }

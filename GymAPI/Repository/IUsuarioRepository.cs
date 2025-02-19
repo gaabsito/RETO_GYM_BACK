@@ -1,6 +1,4 @@
 using GymAPI.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace GymAPI.Repositories
 {
@@ -8,6 +6,9 @@ namespace GymAPI.Repositories
     {
         Task<List<Usuario>> GetAllAsync();
         Task<Usuario?> GetByIdAsync(int id);
+        Task<Usuario?> GetByEmailAsync(string email);
+        Task UpdateResetTokenAsync(int userId, string? token, DateTime? expires);
+        Task<Usuario?> GetByResetTokenAsync(string token);
         Task AddAsync(Usuario usuario);
         Task UpdateAsync(Usuario usuario);
         Task DeleteAsync(int id);

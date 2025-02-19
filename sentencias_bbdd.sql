@@ -13,7 +13,9 @@ CREATE TABLE Usuarios (
     Email VARCHAR(100) UNIQUE NOT NULL,
     Password VARCHAR(255) NOT NULL,
     FechaRegistro DATETIME DEFAULT GETDATE(),
-    EstaActivo BIT DEFAULT 1
+    EstaActivo BIT DEFAULT 1,
+    ResetPasswordToken NVARCHAR(MAX),
+    ResetPasswordExpires DATETIME
 );
 GO
 
@@ -24,8 +26,9 @@ CREATE TABLE Entrenamientos (
     Descripcion VARCHAR(500),
     DuracionMinutos INT NOT NULL,
     Dificultad VARCHAR(20) CHECK (Dificultad IN ('Fácil', 'Media', 'Difícil')),
+    ImagenURL VARCHAR(255),
     FechaCreacion DATETIME DEFAULT GETDATE(),
-    Publico BIT DEFAULT 1, -- Si el entrenamiento es visible para otros usuarios
+    Publico BIT DEFAULT 1,
     AutorID INT NULL REFERENCES Usuarios(UsuarioID) ON DELETE SET NULL
 );
 GO
