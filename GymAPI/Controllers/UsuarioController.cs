@@ -1,12 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using GymAPI.Models;
 using GymAPI.Services;
 using GymAPI.DTOs;
-using System.Security.Claims;
-
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
 namespace GymAPI.Controllers
 {
     [Route("api/[controller]")]
@@ -81,27 +78,120 @@ namespace GymAPI.Controllers
             });
         }
 
+        [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUsuario(int id, UsuarioUpdateDTO usuarioDTO)
+        public async Task<IActionResult> UpdateUsuario(int id, ProfileUpdateDTO usuarioDTO)
         {
+            // Verificar que el usuario solo pueda modificar su propio perfil
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out int userId) || userId != id)
+            {
+                return Forbid();
+            }
+
             var existingUsuario = await _service.GetByIdAsync(id);
             if (existingUsuario == null)
                 return NotFound();
 
+            // Si se está intentando cambiar la contraseña
+            if (!string.IsNullOrEmpty(usuarioDTO.CurrentPassword) && !string.IsNullOrEmpty(usuarioDTO.NewPassword))
+            {
+                // Verificar la contraseña actual
+                if (!BCrypt.Net.BCrypt.Verify(usuarioDTO.CurrentPassword, existingUsuario.Password))
+                {
+                    return BadRequest(new { message = "La contraseña actual es incorrecta" });
+                }
+
+                // Actualizar la contraseña
+                existingUsuario.Password = BCrypt.Net.BCrypt.HashPassword(usuarioDTO.NewPassword);
+            }
+
+            // Actualizar los demás campos si se proporcionaron
             if (!string.IsNullOrWhiteSpace(usuarioDTO.Nombre))
-                existingUsuario.Nombre = usuarioDTO.Nombre;
+                existingUsuario.Nombre = usuarioDTO.Nombre.Trim();
 
             if (!string.IsNullOrWhiteSpace(usuarioDTO.Apellido))
-                existingUsuario.Apellido = usuarioDTO.Apellido;
+                existingUsuario.Apellido = usuarioDTO.Apellido.Trim();
 
             if (!string.IsNullOrWhiteSpace(usuarioDTO.Email))
-                existingUsuario.Email = usuarioDTO.Email;
-
-            if (!string.IsNullOrWhiteSpace(usuarioDTO.Password))
-                existingUsuario.Password = usuarioDTO.Password;
+            {
+                // Verificar si el email ya existe para otro usuario
+                var existingUserWithEmail = await _service.GetByEmailAsync(usuarioDTO.Email.ToLower().Trim());
+                if (existingUserWithEmail != null && existingUserWithEmail.UsuarioID != id)
+                {
+                    return BadRequest(new { message = "El email ya está en uso por otro usuario" });
+                }
+                existingUsuario.Email = usuarioDTO.Email.ToLower().Trim();
+            }
 
             await _service.UpdateAsync(existingUsuario);
-            return NoContent();
+            return Ok(new { message = "Perfil actualizado correctamente" });
+        }
+
+        [Authorize]
+        [HttpGet("profile")]
+        public async Task<ActionResult<ApiResponse<UsuarioDTO>>> GetProfile()
+        {
+            try
+            {
+                // Log el token recibido
+                var authHeader = Request.Headers["Authorization"].ToString();
+                Console.WriteLine($"Token recibido: {authHeader}");
+
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                Console.WriteLine($"UserIdClaim: {userIdClaim}"); // Ver si se está extrayendo el claim
+
+                if (!int.TryParse(userIdClaim, out int userId))
+                {
+                    Console.WriteLine("Error al parsear el userId"); // Log si falla el parsing
+                    return Unauthorized(new ApiResponse<UsuarioDTO>
+                    {
+                        Success = false,
+                        Message = "Token inválido"
+                    });
+                }
+
+                Console.WriteLine($"Buscando usuario con ID: {userId}"); // Log del ID que vamos a buscar
+                var usuario = await _service.GetByIdAsync(userId);
+
+                if (usuario == null)
+                {
+                    Console.WriteLine("Usuario no encontrado"); // Log si no se encuentra el usuario
+                    return NotFound(new ApiResponse<UsuarioDTO>
+                    {
+                        Success = false,
+                        Message = "Usuario no encontrado"
+                    });
+                }
+
+                Console.WriteLine($"Usuario encontrado: {usuario.Email}"); // Log si encontramos el usuario
+
+                var usuarioDTO = new UsuarioDTO
+                {
+                    UsuarioID = usuario.UsuarioID,
+                    Nombre = usuario.Nombre,
+                    Apellido = usuario.Apellido,
+                    Email = usuario.Email,
+                    FechaRegistro = usuario.FechaRegistro,
+                    EstaActivo = usuario.EstaActivo
+                };
+
+                return Ok(new ApiResponse<UsuarioDTO>
+                {
+                    Success = true,
+                    Data = usuarioDTO
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}"); // Log de cualquier excepción
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
+                return StatusCode(500, new ApiResponse<UsuarioDTO>
+                {
+                    Success = false,
+                    Message = "Error interno del servidor"
+                });
+            }
         }
 
         [HttpDelete("{id}")]
@@ -114,79 +204,5 @@ namespace GymAPI.Controllers
             await _service.DeleteAsync(id);
             return NoContent();
         }
-
-
-        
-
-
-
-         [HttpGet("profile")]
-    public async Task<ActionResult<UsuarioDTO>> GetUserProfile()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim))
-        {
-            return Unauthorized(new { message = "Usuario no autenticado" });
-        }
-
-        if (!int.TryParse(userIdClaim, out int userId))
-        {
-            return BadRequest(new { message = "ID de usuario no válido" });
-        }
-
-        var usuario = await _service.GetByIdAsync(userId);
-        if (usuario == null)
-        {
-            return NotFound(new { message = "Usuario no encontrado" });
-        }
-
-        var usuarioDTO = new UsuarioDTO
-        {
-            UsuarioID = usuario.UsuarioID,
-            Nombre = usuario.Nombre,
-            Apellido = usuario.Apellido,
-            Email = usuario.Email,
-            FechaRegistro = usuario.FechaRegistro,
-            EstaActivo = usuario.EstaActivo
-        };
-
-        return Ok(usuarioDTO);
     }
-
-
-
-     [HttpPut("profile")]
-    public async Task<IActionResult> UpdateUserProfile([FromBody] UsuarioUpdateDTO usuarioDTO)
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim))
-        {
-            return Unauthorized(new { message = "Usuario no autenticado" });
-        }
-
-        if (!int.TryParse(userIdClaim, out int userId))
-        {
-            return BadRequest(new { message = "ID de usuario no válido" });
-        }
-
-        var existingUsuario = await _service.GetByIdAsync(userId);
-        if (existingUsuario == null)
-        {
-            return NotFound(new { message = "Usuario no encontrado" });
-        }
-
-        // Solo actualizar los campos permitidos (NO tocar la contraseña)
-        if (!string.IsNullOrWhiteSpace(usuarioDTO.Nombre))
-            existingUsuario.Nombre = usuarioDTO.Nombre;
-
-        if (!string.IsNullOrWhiteSpace(usuarioDTO.Apellido))
-            existingUsuario.Apellido = usuarioDTO.Apellido;
-
-        await _service.UpdateAsync(existingUsuario);
-
-        return Ok(new { message = "Perfil actualizado correctamente", usuario = existingUsuario });
-    }
-
-    }
-
 }
