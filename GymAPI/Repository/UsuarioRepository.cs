@@ -47,7 +47,8 @@ namespace GymAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = "SELECT UsuarioID, Nombre, Apellido, Email, FechaRegistro, EstaActivo FROM Usuarios WHERE UsuarioID = @Id";
+                string query = @"SELECT UsuarioID, Nombre, Apellido, Email, Password, 
+                      FechaRegistro, EstaActivo FROM Usuarios WHERE UsuarioID = @Id";
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Id", id);
@@ -61,8 +62,9 @@ namespace GymAPI.Repositories
                                 Nombre = reader.GetString(1),
                                 Apellido = reader.GetString(2),
                                 Email = reader.GetString(3),
-                                FechaRegistro = reader.GetDateTime(4),
-                                EstaActivo = reader.GetBoolean(5)
+                                Password = reader.GetString(4),
+                                FechaRegistro = reader.GetDateTime(5),
+                                EstaActivo = reader.GetBoolean(6)
                             };
                         }
                     }
