@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using GymAPI.Models;
 using GymAPI.Services;
-using System.Security.Claims;
 using GymAPI.DTOs;
+using System.Security.Claims;
+
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 namespace GymAPI.Controllers
 {
     [Route("api/[controller]")]
@@ -112,83 +116,30 @@ namespace GymAPI.Controllers
         }
 
 
+        
 
 
 
-
-        [HttpGet("profile")]
-        public async Task<ActionResult<UsuarioDTO>> GetUserProfile()
+         [HttpGet("profile")]
+    public async Task<ActionResult<UsuarioDTO>> GetUserProfile()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim))
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            Console.WriteLine($"UserIdClaim: {userIdClaim}");
-
-            if (string.IsNullOrEmpty(userIdClaim))
-            {
-                return Unauthorized(new { message = "Usuario no autenticado" });
-            }
-
-            if (!int.TryParse(userIdClaim, out int userId))
-            {
-                return BadRequest(new { message = "ID de usuario no válido" });
-            }
-
-            var usuario = await _service.GetByIdAsync(userId);
-            if (usuario == null)
-            {
-                return NotFound(new { message = "Usuario no encontrado" });
-            }
-
-            var usuarioDTO = new UsuarioDTO
-            {
-                UsuarioID = usuario.UsuarioID,
-                Nombre = usuario.Nombre,
-                Apellido = usuario.Apellido,
-                Email = usuario.Email,
-                FechaRegistro = usuario.FechaRegistro,
-                EstaActivo = usuario.EstaActivo
-            };
-
-            return Ok(usuarioDTO);
+            return Unauthorized(new { message = "Usuario no autenticado" });
         }
 
-        [HttpPut("profile")]
-        public async Task<IActionResult> UpdateUserProfile([FromBody] UsuarioUpdateDTO usuarioDTO)
+        if (!int.TryParse(userIdClaim, out int userId))
         {
-            // Obtener el ID del usuario autenticado desde el token
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-            {
-                return Unauthorized(new { message = "Usuario no autenticado" });
-            }
-
-            if (!int.TryParse(userIdClaim, out int userId))
-            {
-                return BadRequest(new { message = "ID de usuario no válido" });
-            }
-
-            // Buscar al usuario en la base de datos
-            var existingUsuario = await _service.GetByIdAsync(userId);
-            if (existingUsuario == null)
-                return NotFound(new { message = "Usuario no encontrado" });
-
-            // Actualizar solo los campos que no estén vacíos
-            if (!string.IsNullOrWhiteSpace(usuarioDTO.Nombre))
-                existingUsuario.Nombre = usuarioDTO.Nombre;
-
-            if (!string.IsNullOrWhiteSpace(usuarioDTO.Apellido))
-                existingUsuario.Apellido = usuarioDTO.Apellido;
-
-            // No permitir actualizar el email directamente
-            if (!string.IsNullOrWhiteSpace(usuarioDTO.Password))
-                existingUsuario.Password = usuarioDTO.Password;
-
-            // Guardar cambios
-            await _service.UpdateAsync(existingUsuario);
-            return Ok(new { message = "Perfil actualizado correctamente" });
+            return BadRequest(new { message = "ID de usuario no válido" });
         }
 
+        var usuario = await _service.GetByIdAsync(userId);
+        if (usuario == null)
+        {
+            return NotFound(new { message = "Usuario no encontrado" });
+        }
 
-<<<<<<< Updated upstream
         var usuarioDTO = new UsuarioDTO
         {
             UsuarioID = usuario.UsuarioID,
@@ -201,43 +152,41 @@ namespace GymAPI.Controllers
 
         return Ok(usuarioDTO);
     }
-<<<<<<< HEAD
 
 
-[HttpPut("profile")]
-public async Task<IActionResult> UpdateUserProfile([FromBody] UsuarioUpdateDTO usuarioDTO)
-{
-    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    if (string.IsNullOrEmpty(userIdClaim))
+
+     [HttpPut("profile")]
+    public async Task<IActionResult> UpdateUserProfile([FromBody] UsuarioUpdateDTO usuarioDTO)
     {
-        return Unauthorized(new { message = "Usuario no autenticado" });
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            return Unauthorized(new { message = "Usuario no autenticado" });
+        }
+
+        if (!int.TryParse(userIdClaim, out int userId))
+        {
+            return BadRequest(new { message = "ID de usuario no válido" });
+        }
+
+        var existingUsuario = await _service.GetByIdAsync(userId);
+        if (existingUsuario == null)
+        {
+            return NotFound(new { message = "Usuario no encontrado" });
+        }
+
+        // Solo actualizar los campos permitidos (NO tocar la contraseña)
+        if (!string.IsNullOrWhiteSpace(usuarioDTO.Nombre))
+            existingUsuario.Nombre = usuarioDTO.Nombre;
+
+        if (!string.IsNullOrWhiteSpace(usuarioDTO.Apellido))
+            existingUsuario.Apellido = usuarioDTO.Apellido;
+
+        await _service.UpdateAsync(existingUsuario);
+
+        return Ok(new { message = "Perfil actualizado correctamente", usuario = existingUsuario });
     }
 
-    if (!int.TryParse(userIdClaim, out int userId))
-    {
-        return BadRequest(new { message = "ID de usuario no válido" });
     }
 
-    var existingUsuario = await _service.GetByIdAsync(userId);
-    if (existingUsuario == null)
-    {
-        return NotFound(new { message = "Usuario no encontrado" });
-    }
-
-    // Actualizar solo los campos permitidos
-    if (!string.IsNullOrWhiteSpace(usuarioDTO.Nombre))
-        existingUsuario.Nombre = usuarioDTO.Nombre;
-
-    if (!string.IsNullOrWhiteSpace(usuarioDTO.Apellido))
-        existingUsuario.Apellido = usuarioDTO.Apellido;
-
-    await _service.UpdateAsync(existingUsuario);
-    return Ok(new { message = "Perfil actualizado correctamente" });
-}
-
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> parent of 53daa62 (Update UsuarioController.cs)
-    }
 }
