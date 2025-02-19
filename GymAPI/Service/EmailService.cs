@@ -30,7 +30,7 @@ namespace GymAPI.Services
             message.Subject = "Recuperación de Contraseña - GymApp";
 
             var baseUrl = _configuration["FrontendUrl"]; // Agregar esto en appsettings.json
-            var resetUrl = $"{baseUrl}/reset-password/{resetToken}";
+            var resetUrl = $"{baseUrl}/change-password/{resetToken}";
 
             var bodyBuilder = new BodyBuilder();
             bodyBuilder.HtmlBody = $@"
