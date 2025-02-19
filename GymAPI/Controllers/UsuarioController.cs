@@ -201,6 +201,7 @@ namespace GymAPI.Controllers
 
         return Ok(usuarioDTO);
     }
+<<<<<<< HEAD
 
 
 [HttpPut("profile")]
@@ -236,5 +237,7 @@ public async Task<IActionResult> UpdateUserProfile([FromBody] UsuarioUpdateDTO u
 
 =======
 >>>>>>> Stashed changes
+=======
+>>>>>>> parent of 53daa62 (Update UsuarioController.cs)
     }
 }
