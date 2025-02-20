@@ -193,25 +193,37 @@ namespace GymAPI.Controllers
 
         [Authorize]
         [HttpGet("verify")]
-        public async Task<ActionResult<AuthResponseDTO>> VerifyToken()
+        public async Task<ActionResult<ApiResponse<UsuarioDTO>>> VerifyToken()
         {
             try
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out int id))
                 {
-                    return Unauthorized(new { message = "Token inválido" });
+                    return Unauthorized(new ApiResponse<UsuarioDTO>
+                    {
+                        Success = false,
+                        Message = "Token inválido"
+                    });
                 }
 
                 var user = await _userService.GetByIdAsync(id);
                 if (user == null)
                 {
-                    return Unauthorized(new { message = "Usuario no encontrado" });
+                    return Unauthorized(new ApiResponse<UsuarioDTO>
+                    {
+                        Success = false,
+                        Message = "Usuario no encontrado"
+                    });
                 }
 
                 if (!user.EstaActivo)
                 {
-                    return Unauthorized(new { message = "La cuenta está desactivada" });
+                    return Unauthorized(new ApiResponse<UsuarioDTO>
+                    {
+                        Success = false,
+                        Message = "La cuenta está desactivada"
+                    });
                 }
 
                 var userDto = new UsuarioDTO
@@ -224,11 +236,19 @@ namespace GymAPI.Controllers
                     EstaActivo = user.EstaActivo
                 };
 
-                return Ok(new { user = userDto });
+                return Ok(new ApiResponse<UsuarioDTO>
+                {
+                    Success = true,
+                    Data = userDto
+                });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error interno del servidor al verificar token" });
+                return StatusCode(500, new ApiResponse<UsuarioDTO>
+                {
+                    Success = false,
+                    Message = "Error interno del servidor al verificar token"
+                });
             }
         }
 
