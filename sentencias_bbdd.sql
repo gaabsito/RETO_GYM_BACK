@@ -16,7 +16,8 @@ CREATE TABLE Usuarios (
     EstaActivo BIT DEFAULT 1,
     Peso FLOAT NULL,
     Altura FLOAT NULL,
-    Genero VARCHAR(20) NULL
+    Genero VARCHAR(20) NULL,
+    Edad INT NULL  -- Campo para almacenar la edad directamente
 );
 GO
 
@@ -27,7 +28,7 @@ CREATE TABLE Entrenamientos (
     Descripcion VARCHAR(500),
     DuracionMinutos INT NOT NULL,
     Dificultad VARCHAR(20) CHECK (Dificultad IN ('Fácil', 'Media', 'Difícil')),
-    ImagenURL VARCHAR(255), -- Campo añadido para la URL de la imagen
+    ImagenURL VARCHAR(255),
     FechaCreacion DATETIME DEFAULT GETDATE(),
     Publico BIT DEFAULT 1,
     AutorID INT NULL REFERENCES Usuarios(UsuarioID) ON DELETE SET NULL
