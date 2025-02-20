@@ -51,6 +51,9 @@ builder.Services.AddScoped<IEntrenamientoEjercicioRepository>(provider =>
 builder.Services.AddScoped<IComentarioRepository>(provider =>
     new ComentarioRepository(connectionString));
 
+builder.Services.Configure<GoogleAuthSettings>(
+    builder.Configuration.GetSection("Authentication:Google"));
+
 // 🔹 Registrar los servicios
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IEntrenamientoService, EntrenamientoService>();
