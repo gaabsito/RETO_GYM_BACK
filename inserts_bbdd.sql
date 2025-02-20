@@ -1,10 +1,10 @@
 USE GymappDB
 GO
 -- Insertar Usuarios
-INSERT INTO Usuarios (Nombre, Apellido, Email, Password, FechaRegistro, EstaActivo, Peso, Altura, Genero, Edad) VALUES
-('Carlos', 'Pérez', 'carlos@example.com', 'hashed_password_1', GETDATE(), 1, 75.5, 180, 'Masculino', 33),
-('Ana', 'López', 'ana@example.com', 'hashed_password_2', GETDATE(), 1, 60.2, 165, 'Femenino', 28),
-('David', 'García', 'david@example.com', 'hashed_password_3', GETDATE(), 1, 82.0, 175, 'Masculino', 35);
+INSERT INTO Usuarios (Nombre, Apellido, Email, Password, FechaRegistro, EstaActivo, ResetPasswordToken, ResetPasswordExpires) VALUES
+('Carlos', 'Pérez', 'carlos@example.com', 'hashed_password_1', GETDATE(), 1, NULL, NULL),
+('Ana', 'López', 'ana@example.com', 'hashed_password_2', GETDATE(), 1, NULL, NULL),
+('David', 'García', 'david@example.com', 'hashed_password_3', GETDATE(), 1, NULL, NULL);
 GO
 
 -- Insertar Entrenamientos
