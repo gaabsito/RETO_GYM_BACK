@@ -16,7 +16,8 @@ CREATE TABLE Usuarios (
     EstaActivo BIT DEFAULT 1,
     Peso FLOAT NULL,
     Altura FLOAT NULL,
-    Genero VARCHAR(20) NULL
+    Genero VARCHAR(20) NULL,
+    Edad INT NULL  -- Campo para almacenar la edad directamente
 );
 GO
 
