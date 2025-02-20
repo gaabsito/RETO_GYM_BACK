@@ -27,9 +27,9 @@ namespace GymAPI.Services
             return await _repository.GetByEmailAsync(email);
         }
 
-        public async Task AddAsync(Usuario usuario)
+        public async Task<int> AddAsync(Usuario usuario)
         {
-            await _repository.AddAsync(usuario);
+            return await _repository.AddAsync(usuario);
         }
 
         public async Task UpdateAsync(Usuario usuario)

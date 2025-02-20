@@ -50,7 +50,9 @@ namespace GymAPI.Controllers
                     EstaActivo = true
                 };
 
-                await _userService.AddAsync(usuario);
+                // Añadir usuario y obtener el ID
+                var userId = await _userService.AddAsync(usuario);
+                usuario.UsuarioID = userId;
 
                 // Generar token
                 var token = GenerateJwtToken(usuario);

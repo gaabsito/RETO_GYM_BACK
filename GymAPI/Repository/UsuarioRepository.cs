@@ -162,12 +162,15 @@ namespace GymAPI.Repositories
             return usuario;
         }
 
-        public async Task AddAsync(Usuario usuario)
+        public async Task<int> AddAsync(Usuario usuario)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = "INSERT INTO Usuarios (Nombre, Apellido, Email, Password, EstaActivo) VALUES (@Nombre, @Apellido, @Email, @Password, @EstaActivo)";
+                string query = @"INSERT INTO Usuarios (Nombre, Apellido, Email, Password, EstaActivo) 
+                        VALUES (@Nombre, @Apellido, @Email, @Password, @EstaActivo);
+                        SELECT SCOPE_IDENTITY();";
+
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Nombre", usuario.Nombre);
@@ -175,7 +178,10 @@ namespace GymAPI.Repositories
                     command.Parameters.AddWithValue("@Email", usuario.Email);
                     command.Parameters.AddWithValue("@Password", usuario.Password);
                     command.Parameters.AddWithValue("@EstaActivo", usuario.EstaActivo);
-                    await command.ExecuteNonQueryAsync();
+
+                    var result = await command.ExecuteScalarAsync();
+                    usuario.UsuarioID = Convert.ToInt32(result);
+                    return usuario.UsuarioID;
                 }
             }
         }
