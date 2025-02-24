@@ -19,7 +19,7 @@ namespace GymAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = "SELECT EjercicioID, Nombre, Descripcion, GrupoMuscular, ImagenURL, EquipamientoNecesario FROM Ejercicios";
+                string query = "SELECT EjercicioID, Nombre, Descripcion, GrupoMuscular, ImagenURL, VideoURL, EquipamientoNecesario FROM Ejercicios";
 
                 using (var command = new SqlCommand(query, connection))
                 using (var reader = await command.ExecuteReaderAsync())
@@ -33,7 +33,8 @@ namespace GymAPI.Repositories
                             Descripcion = reader.IsDBNull(2) ? null : reader.GetString(2),
                             GrupoMuscular = reader.IsDBNull(3) ? null : reader.GetString(3),
                             ImagenURL = reader.IsDBNull(4) ? null : reader.GetString(4),
-                            EquipamientoNecesario = reader.GetBoolean(5)
+                            VideoURL = reader.IsDBNull(5) ? null : reader.GetString(5),
+                            EquipamientoNecesario = reader.GetBoolean(6)
                         });
                     }
                 }
@@ -48,7 +49,7 @@ namespace GymAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = "SELECT EjercicioID, Nombre, Descripcion, GrupoMuscular, ImagenURL, EquipamientoNecesario FROM Ejercicios WHERE EjercicioID = @Id";
+                string query = "SELECT EjercicioID, Nombre, Descripcion, GrupoMuscular, ImagenURL, VideoURL, EquipamientoNecesario FROM Ejercicios WHERE EjercicioID = @Id";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -64,7 +65,8 @@ namespace GymAPI.Repositories
                                 Descripcion = reader.IsDBNull(2) ? null : reader.GetString(2),
                                 GrupoMuscular = reader.IsDBNull(3) ? null : reader.GetString(3),
                                 ImagenURL = reader.IsDBNull(4) ? null : reader.GetString(4),
-                                EquipamientoNecesario = reader.GetBoolean(5)
+                                VideoURL = reader.IsDBNull(5) ? null : reader.GetString(5),
+                                EquipamientoNecesario = reader.GetBoolean(6)
                             };
                         }
                     }
@@ -79,7 +81,7 @@ namespace GymAPI.Repositories
             {
                 await connection.OpenAsync();
                 string query = "INSERT INTO Ejercicios (Nombre, Descripcion, GrupoMuscular, ImagenURL, EquipamientoNecesario) " +
-                               "VALUES (@Nombre, @Descripcion, @GrupoMuscular, @ImagenURL, @EquipamientoNecesario)";
+                               "VALUES (@Nombre, @Descripcion, @GrupoMuscular, @ImagenURL, @VideoURL, @EquipamientoNecesario)";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -87,6 +89,7 @@ namespace GymAPI.Repositories
                     command.Parameters.AddWithValue("@Descripcion", (object?)ejercicio.Descripcion ?? DBNull.Value);
                     command.Parameters.AddWithValue("@GrupoMuscular", (object?)ejercicio.GrupoMuscular ?? DBNull.Value);
                     command.Parameters.AddWithValue("@ImagenURL", (object?)ejercicio.ImagenURL ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@VideoURL", (object?)ejercicio.ImagenURL ?? DBNull.Value);
                     command.Parameters.AddWithValue("@EquipamientoNecesario", ejercicio.EquipamientoNecesario);
 
                     await command.ExecuteNonQueryAsync();
@@ -100,7 +103,7 @@ namespace GymAPI.Repositories
             {
                 await connection.OpenAsync();
                 string query = "UPDATE Ejercicios SET Nombre = @Nombre, Descripcion = @Descripcion, GrupoMuscular = @GrupoMuscular, " +
-                               "ImagenURL = @ImagenURL, EquipamientoNecesario = @EquipamientoNecesario WHERE EjercicioID = @Id";
+                               "ImagenURL = @ImagenURL, VideoURL = @VideoURL, EquipamientoNecesario = @EquipamientoNecesario WHERE EjercicioID = @Id";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -109,6 +112,7 @@ namespace GymAPI.Repositories
                     command.Parameters.AddWithValue("@Descripcion", (object?)ejercicio.Descripcion ?? DBNull.Value);
                     command.Parameters.AddWithValue("@GrupoMuscular", (object?)ejercicio.GrupoMuscular ?? DBNull.Value);
                     command.Parameters.AddWithValue("@ImagenURL", (object?)ejercicio.ImagenURL ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@VideoURL", (object?)ejercicio.ImagenURL ?? DBNull.Value);
                     command.Parameters.AddWithValue("@EquipamientoNecesario", ejercicio.EquipamientoNecesario);
 
                     await command.ExecuteNonQueryAsync();

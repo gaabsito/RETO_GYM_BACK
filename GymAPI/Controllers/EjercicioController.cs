@@ -28,6 +28,7 @@ namespace GymAPI.Controllers
                 Descripcion = e.Descripcion,
                 GrupoMuscular = e.GrupoMuscular,
                 ImagenURL = e.ImagenURL,
+                VideoURL = e.VideoURL,
                 EquipamientoNecesario = e.EquipamientoNecesario
             }).ToList();
 
@@ -49,6 +50,7 @@ namespace GymAPI.Controllers
                 Descripcion = ejercicio.Descripcion,
                 GrupoMuscular = ejercicio.GrupoMuscular,
                 ImagenURL = ejercicio.ImagenURL,
+                VideoURL = ejercicio.VideoURL,
                 EquipamientoNecesario = ejercicio.EquipamientoNecesario
             };
 
@@ -65,6 +67,7 @@ namespace GymAPI.Controllers
                 Descripcion = dto.Descripcion,
                 GrupoMuscular = dto.GrupoMuscular,
                 ImagenURL = dto.ImagenURL,
+                VideoURL = dto.VideoURL,
                 EquipamientoNecesario = dto.EquipamientoNecesario
             };
 
@@ -77,6 +80,7 @@ namespace GymAPI.Controllers
                 Descripcion = ejercicio.Descripcion,
                 GrupoMuscular = ejercicio.GrupoMuscular,
                 ImagenURL = ejercicio.ImagenURL,
+                VideoURL = ejercicio.VideoURL,
                 EquipamientoNecesario = ejercicio.EquipamientoNecesario
             };
 
@@ -102,6 +106,9 @@ namespace GymAPI.Controllers
 
             if (!string.IsNullOrWhiteSpace(dto.ImagenURL))
                 existingEjercicio.ImagenURL = dto.ImagenURL;
+            
+            if (!string.IsNullOrWhiteSpace(dto.VideoURL))
+                existingEjercicio.VideoURL = dto.VideoURL;
 
             if (dto.EquipamientoNecesario.HasValue)
                 existingEjercicio.EquipamientoNecesario = dto.EquipamientoNecesario.Value;
