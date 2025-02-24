@@ -14,10 +14,11 @@ CREATE TABLE Usuarios (
     Password VARCHAR(255) NOT NULL,
     FechaRegistro DATETIME DEFAULT GETDATE(),
     EstaActivo BIT DEFAULT 1,
-    Peso FLOAT NULL,
-    Altura FLOAT NULL,
-    Genero VARCHAR(20) NULL,
-    Edad INT NULL  -- Campo para almacenar la edad directamente
+    ResetPasswordToken NVARCHAR(MAX),
+    ResetPasswordExpires DATETIME,
+    Edad INT NULL,         -- Nuevo campo para la edad
+    Altura FLOAT NULL,     -- Nuevo campo para la altura
+    Peso FLOAT NULL        -- Nuevo campo para el peso
 );
 GO
 

@@ -15,5 +15,9 @@ namespace GymAPI.DTOs
 
         [MinLength(6)]
         public string? Password { get; set; }
+
+        public int? Edad { get; set; }
+        public float? Altura { get; set; }
+        public float? Peso { get; set; }
     }
 }

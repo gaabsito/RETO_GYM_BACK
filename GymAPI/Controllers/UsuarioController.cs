@@ -78,55 +78,69 @@ namespace GymAPI.Controllers
             });
         }
 
-        [Authorize]
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUsuario(int id, ProfileUpdateDTO usuarioDTO)
+[Authorize]
+[HttpPut("{id}")]
+public async Task<IActionResult> UpdateUsuario(int id, ProfileUpdateDTO usuarioDTO)
+{
+    // Verificar que el usuario solo pueda modificar su propio perfil
+    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (!int.TryParse(userIdClaim, out int userId) || userId != id)
+    {
+        return Forbid();
+    }
+
+    var existingUsuario = await _service.GetByIdAsync(id);
+    if (existingUsuario == null)
+        return NotFound();
+
+    // Si se está intentando cambiar la contraseña
+    if (!string.IsNullOrEmpty(usuarioDTO.CurrentPassword) && !string.IsNullOrEmpty(usuarioDTO.NewPassword))
+    {
+        // Verificar la contraseña actual
+        if (!BCrypt.Net.BCrypt.Verify(usuarioDTO.CurrentPassword, existingUsuario.Password))
         {
-            // Verificar que el usuario solo pueda modificar su propio perfil
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!int.TryParse(userIdClaim, out int userId) || userId != id)
-            {
-                return Forbid();
-            }
-
-            var existingUsuario = await _service.GetByIdAsync(id);
-            if (existingUsuario == null)
-                return NotFound();
-
-            // Si se está intentando cambiar la contraseña
-            if (!string.IsNullOrEmpty(usuarioDTO.CurrentPassword) && !string.IsNullOrEmpty(usuarioDTO.NewPassword))
-            {
-                // Verificar la contraseña actual
-                if (!BCrypt.Net.BCrypt.Verify(usuarioDTO.CurrentPassword, existingUsuario.Password))
-                {
-                    return BadRequest(new { message = "La contraseña actual es incorrecta" });
-                }
-
-                // Actualizar la contraseña
-                existingUsuario.Password = BCrypt.Net.BCrypt.HashPassword(usuarioDTO.NewPassword);
-            }
-
-            // Actualizar los demás campos si se proporcionaron
-            if (!string.IsNullOrWhiteSpace(usuarioDTO.Nombre))
-                existingUsuario.Nombre = usuarioDTO.Nombre.Trim();
-
-            if (!string.IsNullOrWhiteSpace(usuarioDTO.Apellido))
-                existingUsuario.Apellido = usuarioDTO.Apellido.Trim();
-
-            if (!string.IsNullOrWhiteSpace(usuarioDTO.Email))
-            {
-                // Verificar si el email ya existe para otro usuario
-                var existingUserWithEmail = await _service.GetByEmailAsync(usuarioDTO.Email.ToLower().Trim());
-                if (existingUserWithEmail != null && existingUserWithEmail.UsuarioID != id)
-                {
-                    return BadRequest(new { message = "El email ya está en uso por otro usuario" });
-                }
-                existingUsuario.Email = usuarioDTO.Email.ToLower().Trim();
-            }
-
-            await _service.UpdateAsync(existingUsuario);
-            return Ok(new { message = "Perfil actualizado correctamente" });
+            return BadRequest(new { message = "La contraseña actual es incorrecta" });
         }
+
+        // Actualizar la contraseña
+        existingUsuario.Password = BCrypt.Net.BCrypt.HashPassword(usuarioDTO.NewPassword);
+    }
+
+    // Actualizar los demás campos si se proporcionaron
+    if (!string.IsNullOrWhiteSpace(usuarioDTO.Nombre))
+        existingUsuario.Nombre = usuarioDTO.Nombre.Trim();
+
+    if (!string.IsNullOrWhiteSpace(usuarioDTO.Apellido))
+        existingUsuario.Apellido = usuarioDTO.Apellido.Trim();
+
+    if (!string.IsNullOrWhiteSpace(usuarioDTO.Email))
+    {
+        // Verificar si el email ya existe para otro usuario
+        var existingUserWithEmail = await _service.GetByEmailAsync(usuarioDTO.Email.ToLower().Trim());
+        if (existingUserWithEmail != null && existingUserWithEmail.UsuarioID != id)
+        {
+            return BadRequest(new { message = "El email ya está en uso por otro usuario" });
+        }
+        existingUsuario.Email = usuarioDTO.Email.ToLower().Trim();
+    }
+
+    // **Asignar los campos nuevos** si vienen en el DTO
+    if (usuarioDTO.Edad.HasValue)
+        existingUsuario.Edad = usuarioDTO.Edad.Value;
+
+    if (usuarioDTO.Altura.HasValue)
+        existingUsuario.Altura = usuarioDTO.Altura.Value;
+
+    if (usuarioDTO.Peso.HasValue)
+        existingUsuario.Peso = usuarioDTO.Peso.Value;
+
+    // Guardar cambios
+    await _service.UpdateAsync(existingUsuario);
+
+    return Ok(new { message = "Perfil actualizado correctamente" });
+}
+
+
 
         [Authorize]
         [HttpGet("profile")]

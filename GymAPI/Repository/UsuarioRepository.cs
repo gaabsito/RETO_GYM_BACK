@@ -185,25 +185,46 @@ namespace GymAPI.Repositories
                 }
             }
         }
-
         public async Task UpdateAsync(Usuario usuario)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = "UPDATE Usuarios SET Nombre = @Nombre, Apellido = @Apellido, Email = @Email, Password = @Password, EstaActivo = @EstaActivo WHERE UsuarioID = @Id";
+
+                // Agregar aquí las columnas que quieras actualizar (Edad, Altura, Peso)
+                string query = @"
+            UPDATE Usuarios
+            SET
+                Nombre = @Nombre,
+                Apellido = @Apellido,
+                Email = @Email,
+                Password = @Password,
+                EstaActivo = @EstaActivo,
+                Edad = @Edad,
+                Altura = @Altura,
+                Peso = @Peso
+            WHERE UsuarioID = @Id";
+
                 using (var command = new SqlCommand(query, connection))
                 {
+                    // Asignar los parámetros
                     command.Parameters.AddWithValue("@Id", usuario.UsuarioID);
                     command.Parameters.AddWithValue("@Nombre", usuario.Nombre);
                     command.Parameters.AddWithValue("@Apellido", usuario.Apellido);
                     command.Parameters.AddWithValue("@Email", usuario.Email);
                     command.Parameters.AddWithValue("@Password", usuario.Password);
                     command.Parameters.AddWithValue("@EstaActivo", usuario.EstaActivo);
+
+                    // Manejar nulos para Edad, Altura, Peso (si tus propiedades son int?/float?)
+                    command.Parameters.AddWithValue("@Edad", usuario.Edad ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@Altura", usuario.Altura ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@Peso", usuario.Peso ?? (object)DBNull.Value);
+
                     await command.ExecuteNonQueryAsync();
                 }
             }
         }
+
 
         public async Task DeleteAsync(int id)
         {
