@@ -8,5 +8,9 @@ namespace GymAPI.DTOs
         public string Email { get; set; } = "";
         public DateTime FechaRegistro { get; set; }
         public bool EstaActivo { get; set; }
+        
+         public int Edad { get; set; }
+        public double Peso { get; set; }
+        public double Altura { get; set; }
     }
 }

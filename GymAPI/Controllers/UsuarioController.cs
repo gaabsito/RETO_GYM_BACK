@@ -188,9 +188,9 @@ namespace GymAPI.Controllers
                     Email = usuario.Email,
                     FechaRegistro = usuario.FechaRegistro,
                     EstaActivo = usuario.EstaActivo,
-                    Edad = usuario.Edad,
-                    Peso = usuario.Peso,
-                    Altura = usuario.Altura
+                    Edad = usuario.Edad ?? 0,
+                    Peso = usuario.Peso ?? 0.0,
+                    Altura = usuario.Altura ?? 0.0
                 };
 
                 return Ok(new ApiResponse<UsuarioDTO>
