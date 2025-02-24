@@ -14,12 +14,12 @@ INSERT INTO Entrenamientos (Titulo, Descripcion, DuracionMinutos, Dificultad, Im
 ('Hipertrofia Pecho y Tríceps', 'Rutina para desarrollar masa muscular.', 50, 'Fácil', 'https://darebee.com/images/workouts/muscles/pushup-party-workout.jpg', GETDATE(), 1, 3);
 
 -- Insertar Ejercicios
-INSERT INTO Ejercicios (Nombre, Descripcion, GrupoMuscular, ImagenURL, EquipamientoNecesario) VALUES
-('Sentadilla', 'Ejercicio de piernas y glúteos.', 'Piernas', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Squat_d752e42d-02ba-4692-b300-c6e67ad5a4f5_600x600.png?v=1612138811', 1),
-('Press de Banca', 'Ejercicio para el pectoral mayor.', 'Pecho', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Barbell-Bench-Press_0316b783-43b2-44f8-8a2b-b177a2cfcbfc_600x600.png?v=1612137800', 1),
-('Jalón al Pecho', 'Ejercicio para la espalda.', 'Espalda', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Wide-Grip-Pulldown_91fcba9b-47a2-4185-b093-aa542c81c55c_600x600.png?v=1612138105', 0),
-('Peso Muerto', 'Ejercicio para la cadena posterior.', 'Espalda', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Barbell-Romanian-Deadlift_34ede1b4-63ac-451d-9536-bbf9942b560c_600x600.png?v=1621162957', 1),
-('Curl de Bíceps', 'Ejercicio de aislamiento para bíceps.', 'Bíceps', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Barbell-Curl_f38580d5-412e-4082-b453-5d319afa94fd_600x600.png?v=1612137128', 1);
+INSERT INTO Ejercicios (Nombre, Descripcion, GrupoMuscular, ImagenURL, VideoURL, EquipamientoNecesario) VALUES
+('Sentadilla', 'Ejercicio de piernas y glúteos.', 'Piernas', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Squat_d752e42d-02ba-4692-b300-c6e67ad5a4f5_600x600.png?v=1612138811', 'https://www.youtube.com/watch?v=i7J5h7BJ07g&list=PLyqKj7LwU2RuAg-us4mzap6izNcc1fuRW&index=5', 1),
+('Press de Banca', 'Ejercicio para el pectoral mayor.', 'Pecho', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Barbell-Bench-Press_0316b783-43b2-44f8-8a2b-b177a2cfcbfc_600x600.png?v=1612137800', 'https://www.youtube.com/watch?v=EeE3f4VWFDo&list=PLyqKj7LwU2RuyZwWCIiDHuFZGN11QW3Ff&index=33', 1),
+('Jalón al Pecho', 'Ejercicio para la espalda.', 'Espalda', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Wide-Grip-Pulldown_91fcba9b-47a2-4185-b093-aa542c81c55c_600x600.png?v=1612138105', 'https://www.youtube.com/watch?v=EUIri47Epcg&list=PLyqKj7LwU2RsCtKw3UlE85HYgPM3-xoO1&index=16', 0),
+('Peso Muerto', 'Ejercicio para la cadena posterior.', 'Espalda', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Barbell-Romanian-Deadlift_34ede1b4-63ac-451d-9536-bbf9942b560c_600x600.png?v=1621162957', 'https://www.youtube.com/watch?v=CN_7cz3P-1U&list=PLyqKj7LwU2Rvx_O313dzJNFKPiEqRMWiV&index=10', 1),
+('Curl de Bíceps', 'Ejercicio de aislamiento para bíceps.', 'Bíceps', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Barbell-Curl_f38580d5-412e-4082-b453-5d319afa94fd_600x600.png?v=1612137128', 'https://www.youtube.com/watch?v=JnLFSFurrqQ&list=PLyqKj7LwU2Rt1cwOsHwdXa2TiRzjA6uoB&index=3', 1);
 GO
 
 -- Insertar Relación Entrenamiento - Ejercicios

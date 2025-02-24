@@ -42,6 +42,7 @@ CREATE TABLE Ejercicios (
     Descripcion VARCHAR(200),
     GrupoMuscular VARCHAR(50),
     ImagenURL VARCHAR(255),
+    VideoURL VARCHAR(255),
     EquipamientoNecesario BIT DEFAULT 0
 );
 GO

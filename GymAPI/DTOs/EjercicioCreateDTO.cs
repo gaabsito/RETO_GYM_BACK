@@ -16,6 +16,9 @@ namespace GymAPI.DTOs
 
         [Url(ErrorMessage = "Debe ser una URL válida.")]
         public string? ImagenURL { get; set; }
+        
+        [Url(ErrorMessage = "Debe ser una URL válida.")]
+        public string? VideoURL { get; set; }
 
         public bool EquipamientoNecesario { get; set; } = false;
     }
