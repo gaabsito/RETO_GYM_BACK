@@ -4,14 +4,16 @@ GO
 INSERT INTO Usuarios (Nombre, Apellido, Email, Password, FechaRegistro, EstaActivo, ResetPasswordToken, ResetPasswordExpires) VALUES
 ('Carlos', 'Pérez', 'carlos@example.com', 'hashed_password_1', GETDATE(), 1, NULL, NULL),
 ('Ana', 'López', 'ana@example.com', 'hashed_password_2', GETDATE(), 1, NULL, NULL),
-('David', 'García', 'david@example.com', 'hashed_password_3', GETDATE(), 1, NULL, NULL);
+('David', 'García', 'david@example.com', 'hashed_password_3', GETDATE(), 1, NULL, NULL),
+('Juanjo', 'Gutierrez', 'juanjo@example.com', 'hashed_password_4', GETDATE(), 1, NULL, NULL);
 GO
 
 -- Insertar Entrenamientos
 INSERT INTO Entrenamientos (Titulo, Descripcion, DuracionMinutos, Dificultad, ImagenURL, FechaCreacion, Publico, AutorID) VALUES
 ('Full Body Express', 'Rutina rápida de cuerpo completo.', 45, 'Media', 'https://darebee.com/images/workouts/muscles/air-force-workout.jpg', GETDATE(), 1, 1),
 ('Fuerza Máxima Piernas', 'Entrenamiento centrado en fuerza.', 60, 'Difícil', 'https://darebee.com/images/workouts/muscles/glutes-and-quads-workout.jpg', GETDATE(), 1, 2),
-('Hipertrofia Pecho y Tríceps', 'Rutina para desarrollar masa muscular.', 50, 'Fácil', 'https://darebee.com/images/workouts/muscles/pushup-party-workout.jpg', GETDATE(), 1, 3);
+('Hipertrofia Pecho y Tríceps', 'Rutina para desarrollar masa muscular.', 50, 'Fácil', 'https://darebee.com/images/workouts/muscles/pushup-party-workout.jpg', GETDATE(), 1, 3),
+('Abdominales y Core', 'Rutina para desarrollar masa muscular y core.', 40, 'Difícil', 'https://darebee.com/images/workouts/muscles/titan-core-workout.jpg', GETDATE(), 1, 4);
 
 -- Insertar Ejercicios
 INSERT INTO Ejercicios (Nombre, Descripcion, GrupoMuscular, ImagenURL, VideoURL, EquipamientoNecesario) VALUES
