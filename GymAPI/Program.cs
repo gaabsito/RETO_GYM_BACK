@@ -53,7 +53,7 @@ builder.Services.AddScoped<IComentarioRepository>(provider =>
 
 builder.Services.Configure<GoogleAuthSettings>(
     builder.Configuration.GetSection("Authentication:Google"));
-
+    
 // 🔹 Registrar los servicios
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IEntrenamientoService, EntrenamientoService>();
