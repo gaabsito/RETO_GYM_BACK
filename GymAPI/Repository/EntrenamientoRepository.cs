@@ -48,33 +48,54 @@ namespace GymAPI.Repositories
         public async Task<Entrenamiento?> GetByIdAsync(int id)
         {
             Entrenamiento? entrenamiento = null;
-
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = @"SELECT EntrenamientoID, Titulo, Descripcion, DuracionMinutos, 
-                          Dificultad, ImagenURL, FechaCreacion, Publico, AutorID 
-                          FROM Entrenamientos WHERE EntrenamientoID = @Id";
-
+                string query = @"SELECT e.EntrenamientoID, e.Titulo, e.Descripcion, e.DuracionMinutos, 
+                                        e.Dificultad, e.ImagenURL, e.FechaCreacion, e.Publico, e.AutorID,
+                                        ej.EjercicioID, ej.Nombre, ej.Descripcion 
+                                 FROM Entrenamientos e
+                                 LEFT JOIN EntrenamientoEjercicios ee ON e.EntrenamientoID = ee.EntrenamientoID
+                                 LEFT JOIN Ejercicios ej ON ee.EjercicioID = ej.EjercicioID
+                                 WHERE e.EntrenamientoID = @id";
+                
                 using (var command = new SqlCommand(query, connection))
                 {
-                    command.Parameters.AddWithValue("@Id", id);
+                    command.Parameters.AddWithValue("@id", id);
                     using (var reader = await command.ExecuteReaderAsync())
                     {
-                        if (await reader.ReadAsync())
+                        while (await reader.ReadAsync())
                         {
-                            entrenamiento = new Entrenamiento
+                            if (entrenamiento == null)
                             {
-                                EntrenamientoID = reader.GetInt32(0),
-                                Titulo = reader.GetString(1),
-                                Descripcion = reader.GetString(2),
-                                DuracionMinutos = reader.GetInt32(3),
-                                Dificultad = reader.GetString(4),
-                                ImagenURL = reader.IsDBNull(5) ? null : reader.GetString(5),
-                                FechaCreacion = reader.GetDateTime(6),
-                                Publico = reader.GetBoolean(7),
-                                AutorID = reader.IsDBNull(8) ? null : reader.GetInt32(8)
-                            };
+                                entrenamiento = new Entrenamiento
+                                {
+                                    EntrenamientoID = reader.GetInt32(0),
+                                    Titulo = reader.GetString(1),
+                                    Descripcion = reader.GetString(2),
+                                    DuracionMinutos = reader.GetInt32(3),
+                                    Dificultad = reader.GetString(4),
+                                    ImagenURL = reader.IsDBNull(5) ? null : reader.GetString(5),
+                                    FechaCreacion = reader.GetDateTime(6),
+                                    Publico = reader.GetBoolean(7),
+                                    AutorID = reader.IsDBNull(8) ? null : reader.GetInt32(8),
+                                    EntrenamientoEjercicios = new List<EntrenamientoEjercicio>()
+                                };
+                            }
+
+                            if (!reader.IsDBNull(9))
+                            {
+                                entrenamiento.EntrenamientoEjercicios.Add(new EntrenamientoEjercicio
+                                {
+                                    EjercicioID = reader.GetInt32(9),
+                                    Ejercicio = new Ejercicio
+                                    {
+                                        EjercicioID = reader.GetInt32(9),
+                                        Nombre = reader.GetString(10),
+                                        Descripcion = reader.GetString(11)
+                                    }
+                                });
+                            }
                         }
                     }
                 }

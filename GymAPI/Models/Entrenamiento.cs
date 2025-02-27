@@ -11,5 +11,8 @@ namespace GymAPI.Models
         public DateTime FechaCreacion { get; set; }
         public bool Publico { get; set; }
         public int? AutorID { get; set; }
+
+        // Relación con los ejercicios
+        public ICollection<EntrenamientoEjercicio>? EntrenamientoEjercicios { get; set; } = new List<EntrenamientoEjercicio>();
     }
 }
