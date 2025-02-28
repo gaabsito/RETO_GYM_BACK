@@ -27,7 +27,7 @@ namespace GymAPI.Services
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress(_emailSettings.FromName, _emailSettings.FromEmail));
             message.To.Add(new MailboxAddress(name, toEmail));
-            message.Subject = "Recuperación de Contraseña - GymApp";
+            message.Subject = "Recuperación de Contraseña - ENTRÉNATE";
 
             var baseUrl = _configuration["FrontendUrl"]; // Agregar esto en appsettings.json
             var resetUrl = $"{baseUrl}/change-password/{resetToken}";
