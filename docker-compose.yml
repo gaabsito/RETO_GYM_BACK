@@ -1,41 +1,57 @@
-version: '3.4'
+version: '3.8'
 
 networks:
-    # Network for communication between services
-    backend:
+  gymapp-network:
+    driver: bridge
 
 volumes:
-    sqlserver-data:
-        driver: local
+  sqlserver-data:
+    driver: local
 
 services:
-    bbdd:
-        container_name: dbContainer
+  db:
+    container_name: gymapp-db
+    image: mcr.microsoft.com/mssql/server:2019-CU30-ubuntu-20.04
+    ports:
+      - "1433:1433"
+    networks:
+      - gymapp-network
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStrong@Passw0rd
+    restart: always
 
-        image: mcr.microsoft.com/mssql/server:2019-CU30-ubuntu-20.04
-        ports:
-            - 1433:1433 # Never change the internal port!!!
-        networks:
-            - backend
-        volumes:
-            - sqlserver-data:/var/opt/mssql # Mounted volume in Docker
-        environment:
-            # More secure if you use an .env file
-            - ACCEPT_EULA=Y
-            - MSSQL_SA_PASSWORD=yourStrong(!)Password
+  api:
+    container_name: gymapp-api
+    build:
+      context: .
+      dockerfile: GymAPI/Dockerfile
+    ports:
+      - "5000:80"
+      - "5001:443"
+    networks:
+      - gymapp-network
+    depends_on:
+      - db
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__GymappDB=Server=db;Database=GymappDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
+      - ASPNETCORE_URLS=http://+:80;https://+:443
+    restart: always
 
-    api:
-        container_name: apiContainer
-        image: restaurant_api:1.0
-        ports:
-            - 8001:80 # Never change the internal port!!!
-        networks:
-            - backend
-        build:
-            context: .
-            dockerfile: Dockerfile
-        depends_on:
-            - bbdd # API without DB running is useless
-        environment:
-            # Connection string pointing to the database
-            - ConnectionStrings__RestauranteDB=Server=localhost;Database=RestauranteDB;User Id=sa;Password=YourStrong@Passw0rd;
+  frontend:
+    container_name: gymapp-frontend
+    build:
+      context: .
+      dockerfile: GymFRONT/Dockerfile
+    ports:
+      - "8080:80"
+    networks:
+      - gymapp-network
+    depends_on:
+      - api
+    environment:
+      - VITE_API_URL=http://localhost:5000/api
+    restart: always
