@@ -27,7 +27,7 @@ services:
     container_name: gymapp-api
     build:
       context: .
-      dockerfile: GymAPI/Dockerfile
+      dockerfile: Dockerfile
     ports:
       - "5000:80"
       - "5001:443"
@@ -39,19 +39,6 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__GymappDB=Server=db;Database=GymappDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
       - ASPNETCORE_URLS=http://+:80;https://+:443
-    restart: always
-
-  frontend:
-    container_name: gymapp-frontend
-    build:
-      context: .
-      dockerfile: GymFRONT/Dockerfile
-    ports:
-      - "8080:80"
-    networks:
-      - gymapp-network
-    depends_on:
-      - api
-    environment:
-      - VITE_API_URL=http://localhost:5000/api
+      # Configurar CORS para permitir solicitudes desde el frontend
+      - AllowedOrigins=http://localhost:8080
     restart: always
