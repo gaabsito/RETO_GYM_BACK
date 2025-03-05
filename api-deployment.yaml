@@ -13,24 +13,24 @@ data:
       },
       "AllowedHosts": "*",
       "ConnectionStrings": {
-        "GymappDB": "Server=database-1.cxscdcmrigs9.us-east-1.rds.amazonaws.com;Database=GymappDB;User Id=SA;Password=YourStrongPassw0rd;TrustServerCertificate=True;"
+        "GymappDB": "Server=database-1.cxscdcmrigs9.us-east-1.rds.amazonaws.com;Database=GymappDB;User Id=SA;Password=${DB_PASSWORD};TrustServerCertificate=True;"
       },
       "JwtSettings": {
-        "SecretKey": "zxT3u9n6f8p1m4k7LQJHGFDSAWERTY_secureKey_2024",
+        "SecretKey": "${JWT_SECRET}",
         "ExpirationMinutes": 1440
       },
       "EmailSettings": {
         "SmtpServer": "smtp.gmail.com",
         "SmtpPort": 587,
         "SmtpUsername": "entrenategymapp@gmail.com",
-        "SmtpPassword": "pzzb qmpb jbtr iqgf",
+        "SmtpPassword": "${EMAIL_PASSWORD}",
         "FromEmail": "entrenategymapp@gmail.com",
         "FromName": "ENTRÉNATE"
       },
       "Authentication": {
         "Google": {
           "ClientId": "1088462991637-hqvnr9hmlqpv6lfin0sga0o1h5k4kv21.apps.googleusercontent.com",
-          "ClientSecret": "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"
+          "ClientSecret": "${GOOGLE_CLIENT_SECRET}"
         }
       },
       "FrontendUrl": "http://frontend-service"
@@ -83,23 +83,40 @@ spec:
         env:
         - name: ASPNETCORE_ENVIRONMENT
           value: "Production"
-        - name: ConnectionStrings__GymappDB
-          value: "Server=database-1.cxscdcmrigs9.us-east-1.rds.amazonaws.com;Database=GymappDB;User Id=SA;Password=$(DB_PASSWORD);TrustServerCertificate=True;"
+        - name: ASPNETCORE_URLS
+          value: "http://+:80"
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
               name: gymapi-secrets
               key: db-password
-        - name: JwtSettings__SecretKey
+        - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
               name: gymapi-secrets
               key: jwt-secret
-        - name: EmailSettings__SmtpPassword
+        - name: EMAIL_PASSWORD
           valueFrom:
             secretKeyRef:
               name: gymapi-secrets
               key: email-password
+        - name: GOOGLE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: gymapi-secrets
+              key: google-client-secret
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 20
       volumes:
       - name: config-volume
         configMap:
@@ -123,6 +140,9 @@ metadata:
   name: gymapi-ingress
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   rules:
   - host: api.gymapp.local
