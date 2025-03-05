@@ -13,24 +13,24 @@ data:
       },
       "AllowedHosts": "*",
       "ConnectionStrings": {
-        "GymappDB": "Server=database-1.cxscdcmrigs9.us-east-1.rds.amazonaws.com;Database=GymappDB;User Id=SA;Password=${DB_PASSWORD};TrustServerCertificate=True;"
+        "GymappDB": "Server=database-1.cxscdcmrigs9.us-east-1.rds.amazonaws.com;Database=GymappDB;User Id=SA;Password=YourStrongPassw0rd;TrustServerCertificate=True;"
       },
       "JwtSettings": {
-        "SecretKey": "${JWT_SECRET}",
+        "SecretKey": "zxT3u9n6f8p1m4k7LQJHGFDSAWERTY_secureKey_2024",
         "ExpirationMinutes": 1440
       },
       "EmailSettings": {
         "SmtpServer": "smtp.gmail.com",
         "SmtpPort": 587,
         "SmtpUsername": "entrenategymapp@gmail.com",
-        "SmtpPassword": "${EMAIL_PASSWORD}",
+        "SmtpPassword": "pzzb qmpb jbtr iqgf",
         "FromEmail": "entrenategymapp@gmail.com",
         "FromName": "ENTRÉNATE"
       },
       "Authentication": {
         "Google": {
           "ClientId": "1088462991637-hqvnr9hmlqpv6lfin0sga0o1h5k4kv21.apps.googleusercontent.com",
-          "ClientSecret": "${GOOGLE_CLIENT_SECRET}"
+          "ClientSecret": "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"
         }
       },
       "FrontendUrl": "http://frontend-service"
@@ -83,28 +83,6 @@ spec:
         env:
         - name: ASPNETCORE_ENVIRONMENT
           value: "Production"
-        - name: ASPNETCORE_URLS
-          value: "http://+:80"
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: gymapi-secrets
-              key: db-password
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: gymapi-secrets
-              key: jwt-secret
-        - name: EMAIL_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: gymapi-secrets
-              key: email-password
-        - name: GOOGLE_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: gymapi-secrets
-              key: google-client-secret
       volumes:
       - name: config-volume
         configMap:
@@ -121,25 +99,3 @@ spec:
   - port: 80
     targetPort: 80
   type: LoadBalancer
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: gymapi-ingress
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/use-regex: "true"
-spec:
-  rules:
-  - host: api.gymapp.local
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: gymapi-service
-            port:
-              number: 80
