@@ -13,24 +13,24 @@ data:
       },
       "AllowedHosts": "*",
       "ConnectionStrings": {
-        "GymappDB": "Server=mssql-service;Database=GymappDB;User Id=sa;Password=YourSecurePassword!;TrustServerCertificate=True;"
+        "GymappDB": "Server=database-1.cxscdcmrigs9.us-east-1.rds.amazonaws.com;Database=GymappDB;User Id=SA;Password=YourStrongPassw0rd;TrustServerCertificate=True;"
       },
       "JwtSettings": {
-        "SecretKey": "YOUR_SUPER_SECRET_KEY_SHOULD_BE_STORED_IN_KUBERNETES_SECRETS",
+        "SecretKey": "zxT3u9n6f8p1m4k7LQJHGFDSAWERTY_secureKey_2024",
         "ExpirationMinutes": 1440
       },
       "EmailSettings": {
         "SmtpServer": "smtp.gmail.com",
         "SmtpPort": 587,
         "SmtpUsername": "entrenategymapp@gmail.com",
-        "SmtpPassword": "YOUR_EMAIL_PASSWORD_SHOULD_BE_IN_SECRETS",
+        "SmtpPassword": "pzzb qmpb jbtr iqgf",
         "FromEmail": "entrenategymapp@gmail.com",
         "FromName": "ENTRÉNATE"
       },
       "Authentication": {
         "Google": {
-          "ClientId": "YOUR_GOOGLE_CLIENT_ID",
-          "ClientSecret": "YOUR_GOOGLE_CLIENT_SECRET"
+          "ClientId": "1088462991637-hqvnr9hmlqpv6lfin0sga0o1h5k4kv21.apps.googleusercontent.com",
+          "ClientSecret": "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"
         }
       },
       "FrontendUrl": "http://frontend-service"
@@ -84,7 +84,7 @@ spec:
         - name: ASPNETCORE_ENVIRONMENT
           value: "Production"
         - name: ConnectionStrings__GymappDB
-          value: "Server=mssql-service;Database=GymappDB;User Id=sa;Password=$(DB_PASSWORD);TrustServerCertificate=True;"
+          value: "Server=database-1.cxscdcmrigs9.us-east-1.rds.amazonaws.com;Database=GymappDB;User Id=SA;Password=$(DB_PASSWORD);TrustServerCertificate=True;"
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -100,18 +100,6 @@ spec:
             secretKeyRef:
               name: gymapi-secrets
               key: email-password
-        livenessProbe:
-          httpGet:
-            path: /api/health
-            port: 80
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /api/health
-            port: 80
-          initialDelaySeconds: 15
-          periodSeconds: 5
       volumes:
       - name: config-volume
         configMap:
@@ -128,73 +116,6 @@ spec:
   - port: 80
     targetPort: 80
   type: ClusterIP
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: mssql-deployment
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: mssql
-  template:
-    metadata:
-      labels:
-        app: mssql
-    spec:
-      containers:
-      - name: mssql
-        image: mcr.microsoft.com/mssql/server:2022-latest
-        ports:
-        - containerPort: 1433
-        env:
-        - name: ACCEPT_EULA
-          value: "Y"
-        - name: MSSQL_SA_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: gymapi-secrets
-              key: db-password
-        - name: MSSQL_PID
-          value: "Express"
-        volumeMounts:
-        - name: mssql-data
-          mountPath: /var/opt/mssql
-        resources:
-          limits:
-            cpu: "2"
-            memory: "2Gi"
-          requests:
-            cpu: "1"
-            memory: "1Gi"
-      volumes:
-      - name: mssql-data
-        persistentVolumeClaim:
-          claimName: mssql-pvc
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: mssql-service
-spec:
-  selector:
-    app: mssql
-  ports:
-  - port: 1433
-    targetPort: 1433
-  type: ClusterIP
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mssql-pvc
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
