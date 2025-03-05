@@ -1,0 +1,216 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gymapi-config
+data:
+  appsettings.json: |
+    {
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft.AspNetCore": "Warning"
+        }
+      },
+      "AllowedHosts": "*",
+      "ConnectionStrings": {
+        "GymappDB": "Server=mssql-service;Database=GymappDB;User Id=sa;Password=YourSecurePassword!;TrustServerCertificate=True;"
+      },
+      "JwtSettings": {
+        "SecretKey": "YOUR_SUPER_SECRET_KEY_SHOULD_BE_STORED_IN_KUBERNETES_SECRETS",
+        "ExpirationMinutes": 1440
+      },
+      "EmailSettings": {
+        "SmtpServer": "smtp.gmail.com",
+        "SmtpPort": 587,
+        "SmtpUsername": "entrenategymapp@gmail.com",
+        "SmtpPassword": "YOUR_EMAIL_PASSWORD_SHOULD_BE_IN_SECRETS",
+        "FromEmail": "entrenategymapp@gmail.com",
+        "FromName": "ENTRÉNATE"
+      },
+      "Authentication": {
+        "Google": {
+          "ClientId": "YOUR_GOOGLE_CLIENT_ID",
+          "ClientSecret": "YOUR_GOOGLE_CLIENT_SECRET"
+        }
+      },
+      "FrontendUrl": "http://frontend-service"
+    }
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gymapi-secrets
+type: Opaque
+stringData:
+  db-password: YourStrongPassw0rd
+  jwt-secret: zxT3u9n6f8p1m4k7LQJHGFDSAWERTY_secureKey_2024
+  email-password: pzzb qmpb jbtr iqgf
+  google-client-secret: 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
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gymapi-deployment
+  labels:
+    app: gymapi
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gymapi
+  template:
+    metadata:
+      labels:
+        app: gymapi
+    spec:
+      containers:
+      - name: gymapi
+        image: gymapi:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/appsettings.json
+          subPath: appsettings.json
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ConnectionStrings__GymappDB
+          value: "Server=mssql-service;Database=GymappDB;User Id=sa;Password=$(DB_PASSWORD);TrustServerCertificate=True;"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gymapi-secrets
+              key: db-password
+        - name: JwtSettings__SecretKey
+          valueFrom:
+            secretKeyRef:
+              name: gymapi-secrets
+              key: jwt-secret
+        - name: EmailSettings__SmtpPassword
+          valueFrom:
+            secretKeyRef:
+              name: gymapi-secrets
+              key: email-password
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 5
+      volumes:
+      - name: config-volume
+        configMap:
+          name: gymapi-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gymapi-service
+spec:
+  selector:
+    app: gymapi
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mssql-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mssql
+  template:
+    metadata:
+      labels:
+        app: mssql
+    spec:
+      containers:
+      - name: mssql
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        ports:
+        - containerPort: 1433
+        env:
+        - name: ACCEPT_EULA
+          value: "Y"
+        - name: MSSQL_SA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gymapi-secrets
+              key: db-password
+        - name: MSSQL_PID
+          value: "Express"
+        volumeMounts:
+        - name: mssql-data
+          mountPath: /var/opt/mssql
+        resources:
+          limits:
+            cpu: "2"
+            memory: "2Gi"
+          requests:
+            cpu: "1"
+            memory: "1Gi"
+      volumes:
+      - name: mssql-data
+        persistentVolumeClaim:
+          claimName: mssql-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mssql-service
+spec:
+  selector:
+    app: mssql
+  ports:
+  - port: 1433
+    targetPort: 1433
+  type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mssql-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gymapi-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: api.gymapp.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: gymapi-service
+            port:
+              number: 80
