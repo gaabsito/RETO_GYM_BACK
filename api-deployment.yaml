@@ -105,18 +105,6 @@ spec:
             secretKeyRef:
               name: gymapi-secrets
               key: google-client-secret
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 80
-          initialDelaySeconds: 10
-          periodSeconds: 10
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 80
-          initialDelaySeconds: 15
-          periodSeconds: 20
       volumes:
       - name: config-volume
         configMap:

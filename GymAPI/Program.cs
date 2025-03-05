@@ -60,7 +60,6 @@ builder.Services.AddScoped<IEntrenamientoService, EntrenamientoService>();
 builder.Services.AddScoped<IEjercicioService, EjercicioService>();
 builder.Services.AddScoped<IEntrenamientoEjercicioService, EntrenamientoEjercicioService>();
 builder.Services.AddScoped<IComentarioService, ComentarioService>();
-builder.Services.AddHealthChecks();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -136,7 +135,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-app.MapHealthChecks("/health");
 
 app.Run();
