@@ -13,24 +13,24 @@ data:
       },
       "AllowedHosts": "*",
       "ConnectionStrings": {
-        "GymappDB": "Server=database-1.cxscdcmrigs9.us-east-1.rds.amazonaws.com;Database=GymappDB;User Id=SA;Password=YourStrongPassw0rd;TrustServerCertificate=True;"
+        "GymappDB": "Server=database-1.cxscdcmrigs9.us-east-1.rds.amazonaws.com;Database=GymappDB;User Id=SA;Password=${DB_PASSWORD};TrustServerCertificate=True;"
       },
       "JwtSettings": {
-        "SecretKey": "zxT3u9n6f8p1m4k7LQJHGFDSAWERTY_secureKey_2024",
+        "SecretKey": "${JWT_SECRET}",
         "ExpirationMinutes": 1440
       },
       "EmailSettings": {
         "SmtpServer": "smtp.gmail.com",
         "SmtpPort": 587,
         "SmtpUsername": "entrenategymapp@gmail.com",
-        "SmtpPassword": "pzzb qmpb jbtr iqgf",
+        "SmtpPassword": "${EMAIL_PASSWORD}",
         "FromEmail": "entrenategymapp@gmail.com",
         "FromName": "ENTRÉNATE"
       },
       "Authentication": {
         "Google": {
           "ClientId": "1088462991637-hqvnr9hmlqpv6lfin0sga0o1h5k4kv21.apps.googleusercontent.com",
-          "ClientSecret": "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"
+          "ClientSecret": "${GOOGLE_CLIENT_SECRET}"
         }
       },
       "FrontendUrl": "http://frontend-service"
@@ -83,6 +83,26 @@ spec:
         env:
         - name: ASPNETCORE_ENVIRONMENT
           value: "Production"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gymapi-secrets
+              key: db-password
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: gymapi-secrets
+              key: jwt-secret
+        - name: EMAIL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gymapi-secrets
+              key: email-password
+        - name: GOOGLE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: gymapi-secrets
+              key: google-client-secret
       volumes:
       - name: config-volume
         configMap:
