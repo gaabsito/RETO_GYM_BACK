@@ -65,7 +65,7 @@ spec:
     spec:
       containers:
       - name: gymapi
-        image: jaimeescartinsv/gymapi:gymapi
+        image: jaimeescartinsv/sanvalero:gymapi
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
