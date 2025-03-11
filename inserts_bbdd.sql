@@ -47,3 +47,36 @@ INSERT INTO Comentarios (EntrenamientoID, UsuarioID, Contenido, Calificacion, Fe
 (2, 3, 'Me ha costado, pero es excelente para ganar fuerza.', 4, GETDATE()),
 (3, 1, 'Rutina completa y efectiva.', 5, GETDATE());
 GO
+
+-- Insertar Ejercicios Adicionales
+INSERT INTO Ejercicios (Nombre, Descripcion, GrupoMuscular, ImagenURL, VideoURL, EquipamientoNecesario) VALUES
+-- Piernas
+('Zancadas', 'Ejercicio para cuádriceps, glúteos e isquiotibiales.', 'Piernas', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Lunge_600x600.png?v=1612138903', 'https://www.youtube.com/watch?v=eFWCn5iEbTU', 0),
+('Prensa de Piernas', 'Ejercicio en máquina para desarrollar cuádriceps.', 'Piernas', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Leg-Press_f7febd5c-75e5-42f4-9bb4-c938969ce293_600x600.png?v=1612138836', 'https://www.youtube.com/watch?v=yZmx_Ac3880', 1),
+('Extensión de Cuádriceps', 'Aislamiento para la parte frontal del muslo.', 'Piernas', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Leg-Extension_41d91d3f-4b9c-4374-82e2-1d697ce35fe4_600x600.png?v=1612138862', 'https://www.youtube.com/watch?v=m0FOpMEgero', 1),
+('Curl Femoral', 'Ejercicio para fortalecer isquiotibiales.', 'Piernas', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Lying-Leg-Curl_203153d8-79dd-4bb9-9125-708aa4327107_600x600.png?v=1612139013', 'https://www.youtube.com/watch?v=n5WDXD_mpVY', 1),
+
+-- Pecho
+('Aperturas con Mancuernas', 'Ejercicio de aislamiento para pectorales.', 'Pecho', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Dumbbell-Fly_119e2918-4241-4f55-bd77-c98a0c76c6c8_600x600.png?v=1612137840', 'https://www.youtube.com/watch?v=JFm8KbhjibM', 1),
+('Push-Ups', 'Ejercicio básico para pecho y tríceps.', 'Pecho', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Push-Ups_600x600.png?v=1640121436', 'https://www.youtube.com/watch?v=mm6_WcoCVTA', 0),
+('Press Inclinado con Mancuernas', 'Enfoca la parte superior del pectoral.', 'Pecho', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Incline-Dumbbell-Bench-Press_c2bf89a2-433f-4a8f-9801-67c679980867_600x600.png?v=1612138008', 'https://www.youtube.com/watch?v=5CECBjd7HLQ', 1),
+
+-- Espalda
+('Remo con Barra', 'Ejercicio para el desarrollo de la espalda media.', 'Espalda', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Barbell-Row_4beb1d94-bac9-4538-9578-2d9cf93ef008_600x600.png?v=1612138201', 'https://www.youtube.com/watch?v=6FZHJGzMFEc', 1),
+('Remo con Mancuerna', 'Ejercicio unilateral para equilibrio muscular.', 'Espalda', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Dumbbell-Bent-Over-Row-_Single-Arm_49867db3-f465-4fbc-b359-29cbdda502e2_600x600.png?v=1612138069', 'https://www.youtube.com/watch?v=DMo3HJoawrU', 1),
+
+-- Hombros
+('Press Militar', 'Ejercicio compuesto para hombros.', 'Hombros', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Dumbbell-Shoulder-Press_da0aa742-620a-45f7-9277-78137d38ff28_600x600.png?v=1612138495', 'https://www.youtube.com/watch?v=HzIiNhHhhtA', 1),
+('Elevaciones Laterales', 'Aislamiento para el deltoides medio.', 'Hombros', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Dumbbell-Lateral-Raise_31c81eee-81c4-4ffe-890d-ee13dd5bbf20_600x600.png?v=1612138523', 'https://www.youtube.com/watch?v=OuG1smZTsQQ', 1),
+
+-- Brazos
+('Extensión de Tríceps', 'Ejercicio de aislamiento para tríceps.', 'Tríceps', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Triceps-Pressdown_e759437b-6200-4b44-b484-14db770024a4_600x600.png?v=1612136845', 'https://www.youtube.com/watch?v=6Fzep104f0s', 1),
+('Fondos en Paralelas', 'Ejercicio compuesto para tríceps y pecho.', 'Tríceps', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Parallel-Dip-Bar_600x600.png?v=1619977962', 'https://www.youtube.com/watch?v=4LA1kF7yCGo', 0),
+('Press Francés con Mancuernas', 'Ejercicio para bíceps y braquial.', 'Bíceps', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Lying-Dumbbell-Triceps-Extension_600x600.png?v=1619978076', 'https://www.youtube.com/watch?v=l3rHYPtMUo8', 1),
+
+-- Core y Abdominales
+('Crunch', 'Ejercicio básico para abdominales superiores.', 'Abdominales', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Crunch_f3498d5d-82d9-4a7f-8dee-98a2e55a62f2_600x600.png?v=1612138317', 'https://www.youtube.com/watch?v=6GMKPQVERzw&list=PLyqKj7LwU2RvTgEW_QlCCjtIL5d_KP_-I&index=6', 0),
+('Plancha', 'Ejercicio isométrico para el core.', 'Abdominales', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Plank_3a82d566-9cb2-4c20-b301-bc8bd635c4d1_600x600.png?v=1612138431', 'https://www.youtube.com/watch?v=Ff4_A3y7JR0&list=PLyqKj7LwU2RvTgEW_QlCCjtIL5d_KP_-I&index=10', 0),
+('Crunch Oblicuo', 'Ejercicio para oblicuos y core rotacional.', 'Abdominales', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Oblique-Crunch_253d0361-395d-443b-8228-aff440c1eee9_600x600.png?v=1612138354', 'https://www.youtube.com/watch?v=KzEakx0Oja8&list=PLyqKj7LwU2RvTgEW_QlCCjtIL5d_KP_-I&index=13', 0),
+('Elevación de Piernas', 'Ejercicio para abdominales inferiores.', 'Abdominales', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Hanging-Leg-Raise_36986393-d0a6-494a-981f-4ea06a99b0b5_600x600.png?v=1612138457', 'https://www.youtube.com/watch?v=7FwGZ8qY5OU&list=PLyqKj7LwU2RvTgEW_QlCCjtIL5d_KP_-I&index=2', 0);
+GO
