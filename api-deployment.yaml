@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gymapi-config
+data:
+  appsettings.json: |
+    {
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft.AspNetCore": "Warning"
+        }
+      },
+      "AllowedHosts": "*",
+      "ConnectionStrings": {
+        "GymappDB": "Server=database-1.cxscdcmrigs9.us-east-1.rds.amazonaws.com;Database=GymappDB;User Id=SA;Password=YourStrongPassw0rd;TrustServerCertificate=True;"
+      },
+      "JwtSettings": {
+        "SecretKey": "zxT3u9n6f8p1m4k7LQJHGFDSAWERTY_secureKey_2024",
+        "ExpirationMinutes": 1440
+      },
+      "EmailSettings": {
+        "SmtpServer": "smtp.gmail.com",
+        "SmtpPort": 587,
+        "SmtpUsername": "entrenategymapp@gmail.com",
+        "SmtpPassword": "pzzb qmpb jbtr iqgf",
+        "FromEmail": "entrenategymapp@gmail.com",
+        "FromName": "ENTRÉNATE"
+      },
+      "Authentication": {
+        "Google": {
+          "ClientId": "1088462991637-hqvnr9hmlqpv6lfin0sga0o1h5k4kv21.apps.googleusercontent.com",
+          "ClientSecret": "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"
+        }
+      },
+      "FrontendUrl": "http://frontend-service"
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gymapi-deployment
+  labels:
+    app: gymapi
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gymapi
+  template:
+    metadata:
+      labels:
+        app: gymapi
+    spec:
+      containers:
+      - name: gymapi
+        image: jaimeescartinsv/sanvalero:gymapi
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/appsettings.json
+          subPath: appsettings.json
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+      volumes:
+      - name: config-volume
+        configMap:
+          name: gymapi-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gymapi-service
+spec:
+  selector:
+    app: gymapi
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: LoadBalancer

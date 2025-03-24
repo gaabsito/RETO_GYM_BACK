@@ -51,6 +51,9 @@ builder.Services.AddScoped<IEntrenamientoEjercicioRepository>(provider =>
 builder.Services.AddScoped<IComentarioRepository>(provider =>
     new ComentarioRepository(connectionString));
 
+builder.Services.Configure<GoogleAuthSettings>(
+    builder.Configuration.GetSection("Authentication:Google"));
+    
 // 🔹 Registrar los servicios
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IEntrenamientoService, EntrenamientoService>();
@@ -61,9 +64,15 @@ builder.Services.AddScoped<IComentarioService, ComentarioService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// 🔹 Configurar Swagger para autenticación
+// 🔹 Configurar Swagger para autenticación - SIEMPRE habilitado
 builder.Services.AddSwaggerGen(c =>
 {
+    c.SwaggerDoc("v1", new OpenApiInfo { 
+        Title = "GymAPI", 
+        Version = "v1",
+        Description = "API para aplicación de entrenamiento personal" 
+    });
+    
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -90,17 +99,16 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// 🔹 Configurar CORS para permitir Vue
+// 🔹 Configurar CORS para permitir Vue - Corregido para evitar el error con AllowCredentials
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowVueApp",
         builder =>
         {
             builder
-                .WithOrigins("http://localhost:5173")
+                .AllowAnyOrigin()
                 .AllowAnyMethod()
-                .AllowAnyHeader()
-                .AllowCredentials();
+                .AllowAnyHeader();
         });
 });
 
@@ -108,14 +116,19 @@ var app = builder.Build();
 
 app.UseCors("AllowVueApp");
 
-// 🔹 Configurar Swagger en desarrollo
+// 🔹 Habilitar Swagger en todos los entornos
+app.UseSwagger();
+app.UseSwaggerUI(c => {
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "GymAPI v1");
+    // Opcional: Hacer que Swagger UI sea la página de inicio
+    c.RoutePrefix = string.Empty;
+});
+
+// Solo redirigir a HTTPS en entorno de desarrollo
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseHttpsRedirection();
 }
-
-app.UseHttpsRedirection();
 
 // 🔹 Añadir middleware de autenticación y autorización
 app.UseAuthentication();

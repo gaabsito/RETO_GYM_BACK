@@ -35,22 +35,46 @@ namespace GymAPI.Controllers
         }
 
         // ✅ POST: Agregar un ejercicio a un entrenamiento
-        [HttpPost]
-        public async Task<IActionResult> AddEjercicio([FromBody] EntrenamientoEjercicioCreateDTO dto)
-        {
-            var entrenamientoEjercicio = new EntrenamientoEjercicio
-            {
-                EntrenamientoID = dto.EntrenamientoID,
-                EjercicioID = dto.EjercicioID,
-                Series = dto.Series,
-                Repeticiones = dto.Repeticiones,
-                DescansoSegundos = dto.DescansoSegundos,
-                Notas = dto.Notas
-            };
+       [HttpPost]
+public async Task<IActionResult> AddEjercicio([FromBody] EntrenamientoEjercicioCreateDTO dto)
+{
+    Console.WriteLine("📩 Recibiendo solicitud para asignar ejercicio...");
+    
+    if (dto == null)
+    {
+        Console.WriteLine("❌ Error: DTO recibido es nulo.");
+        return BadRequest("El cuerpo de la solicitud es nulo.");
+    }
 
-            await _service.AddAsync(entrenamientoEjercicio);
-            return CreatedAtAction(nameof(GetEjerciciosPorEntrenamiento), new { entrenamientoID = entrenamientoEjercicio.EntrenamientoID }, entrenamientoEjercicio);
-        }
+    Console.WriteLine($"➡️ Datos recibidos - EntrenamientoID: {dto.EntrenamientoID}, EjercicioID: {dto.EjercicioID}");
+    Console.WriteLine($"➡️ Series: {dto.Series}, Repeticiones: {dto.Repeticiones}, Descanso: {dto.DescansoSegundos}");
+    Console.WriteLine($"➡️ Notas: {dto.Notas}");
+
+    try
+    {
+        var entrenamientoEjercicio = new EntrenamientoEjercicio
+        {
+            EntrenamientoID = dto.EntrenamientoID,
+            EjercicioID = dto.EjercicioID,
+            Series = dto.Series,
+            Repeticiones = dto.Repeticiones,
+            DescansoSegundos = dto.DescansoSegundos,
+            Notas = dto.Notas
+        };
+
+        Console.WriteLine("🔄 Guardando en la base de datos...");
+        await _service.AddAsync(entrenamientoEjercicio);
+        Console.WriteLine("✅ Ejercicio asignado correctamente.");
+
+        return CreatedAtAction(nameof(GetEjerciciosPorEntrenamiento), new { entrenamientoID = entrenamientoEjercicio.EntrenamientoID }, entrenamientoEjercicio);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("❌ Error en la API: " + ex.Message);
+        return StatusCode(500, "Error interno del servidor: " + ex.Message);
+    }
+}
+
 
         // ✅ PUT: Actualizar un ejercicio dentro de un entrenamiento
         [HttpPut("{entrenamientoID}/{ejercicioID}")]

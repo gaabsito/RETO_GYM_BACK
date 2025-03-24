@@ -2,6 +2,7 @@ using GymAPI.DTOs;
 using GymAPI.Models;
 using GymAPI.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace GymAPI.Controllers
 {
@@ -21,18 +22,38 @@ namespace GymAPI.Controllers
         public async Task<ActionResult<List<EntrenamientoDTO>>> GetEntrenamientos()
         {
             var entrenamientos = await _service.GetAllAsync();
-            var entrenamientosDTO = entrenamientos.Select(e => new EntrenamientoDTO
+            var entrenamientosDTO = new List<EntrenamientoDTO>();
+            
+            // Obtener el ID del usuario autenticado (si existe)
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            int? userId = null;
+            if (int.TryParse(userIdClaim, out int parsedId))
             {
-                EntrenamientoID = e.EntrenamientoID,
-                Titulo = e.Titulo,
-                Descripcion = e.Descripcion,
-                DuracionMinutos = e.DuracionMinutos,
-                Dificultad = e.Dificultad,
-                ImagenURL = e.ImagenURL,
-                FechaCreacion = e.FechaCreacion,
-                Publico = e.Publico,
-                AutorID = e.AutorID
-            }).ToList();
+                userId = parsedId;
+            }
+            
+            // Filtrar los entrenamientos según la autenticación
+            foreach (var e in entrenamientos)
+            {
+                // Incluir el entrenamiento si:
+                // 1. Es público, o
+                // 2. El usuario está autenticado y es el autor del entrenamiento
+                if (e.Publico || (userId.HasValue && e.AutorID == userId.Value))
+                {
+                    entrenamientosDTO.Add(new EntrenamientoDTO
+                    {
+                        EntrenamientoID = e.EntrenamientoID,
+                        Titulo = e.Titulo,
+                        Descripcion = e.Descripcion,
+                        DuracionMinutos = e.DuracionMinutos,
+                        Dificultad = e.Dificultad,
+                        ImagenURL = e.ImagenURL,
+                        FechaCreacion = e.FechaCreacion,
+                        Publico = e.Publico,
+                        AutorID = e.AutorID
+                    });
+                }
+            }
 
             return Ok(entrenamientosDTO);
         }
@@ -44,6 +65,20 @@ namespace GymAPI.Controllers
             var entrenamiento = await _service.GetByIdAsync(id);
             if (entrenamiento == null)
                 return NotFound();
+
+            // Obtener el ID del usuario autenticado (si existe)
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            int? userId = null;
+            if (int.TryParse(userIdClaim, out int parsedId))
+            {
+                userId = parsedId;
+            }
+            
+            // Verificar si el usuario puede acceder a este entrenamiento
+            if (!entrenamiento.Publico && (userId == null || entrenamiento.AutorID != userId.Value))
+            {
+                return Forbid(); // El usuario no tiene permiso para ver este entrenamiento
+            }
 
             var entrenamientoDTO = new EntrenamientoDTO
             {
@@ -100,6 +135,13 @@ namespace GymAPI.Controllers
             if (existingEntrenamiento == null)
                 return NotFound();
 
+            // Verificar que el usuario autenticado sea el autor (para mayor seguridad)
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(userIdClaim, out int userId) && existingEntrenamiento.AutorID != userId)
+            {
+                return Forbid(); // Solo el autor puede modificar el entrenamiento
+            }
+
             if (!string.IsNullOrWhiteSpace(entrenamientoDTO.Titulo))
                 existingEntrenamiento.Titulo = entrenamientoDTO.Titulo;
 
@@ -129,6 +171,13 @@ namespace GymAPI.Controllers
             var entrenamiento = await _service.GetByIdAsync(id);
             if (entrenamiento == null)
                 return NotFound();
+
+            // Verificar que el usuario autenticado sea el autor (para mayor seguridad)
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(userIdClaim, out int userId) && entrenamiento.AutorID != userId)
+            {
+                return Forbid(); // Solo el autor puede eliminar el entrenamiento
+            }
 
             await _service.DeleteAsync(id);
             return NoContent();

@@ -9,6 +9,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.Extensions.Options;
 using GymAPI.Settings;
 using Microsoft.AspNetCore.Authorization;
+using Google.Apis.Auth;
 
 namespace GymAPI.Controllers
 {
@@ -18,12 +19,14 @@ namespace GymAPI.Controllers
     {
         private readonly IUsuarioService _userService;
         private readonly JwtSettings _jwtSettings;
+        private readonly GoogleAuthSettings _googleAuthSettings;
         private readonly IEmailService _emailService;
 
-        public AuthController(IUsuarioService userService, IOptions<JwtSettings> jwtSettings, IEmailService emailService)
+        public AuthController(IUsuarioService userService, IOptions<JwtSettings> jwtSettings, IOptions<GoogleAuthSettings> googleAuthSettings, IEmailService emailService)
         {
             _userService = userService;
             _jwtSettings = jwtSettings.Value;
+            _googleAuthSettings = googleAuthSettings.Value;
             _emailService = emailService;
         }
 
@@ -249,6 +252,67 @@ namespace GymAPI.Controllers
                     Success = false,
                     Message = "Error interno del servidor al verificar token"
                 });
+            }
+        }
+
+        [HttpPost("google")]
+        public async Task<ActionResult<AuthResponseDTO>> GoogleLogin([FromBody] GoogleAuthDTO googleAuthDto)
+        {
+            try
+            {
+                var settings = new GoogleJsonWebSignature.ValidationSettings
+                {
+                    Audience = new[] { _googleAuthSettings.ClientId }
+                };
+
+                var payload = await GoogleJsonWebSignature.ValidateAsync(googleAuthDto.IdToken, settings);
+
+                // Buscar si el usuario ya existe
+                var existingUser = await _userService.GetByEmailAsync(payload.Email);
+
+                if (existingUser == null)
+                {
+                    // Crear nuevo usuario
+                    var newUser = new Usuario
+                    {
+                        Email = payload.Email,
+                        Nombre = payload.GivenName ?? payload.Name.Split(' ')[0],
+                        Apellido = payload.FamilyName ?? (payload.Name.Split(' ').Length > 1 ? payload.Name.Split(' ')[1] : ""),
+                        Password = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()), // Contraseña aleatoria
+                        FechaRegistro = DateTime.UtcNow,
+                        EstaActivo = true
+                    };
+
+                    await _userService.AddAsync(newUser);
+                    existingUser = newUser;
+                }
+
+                // Generar JWT token
+                var token = GenerateJwtToken(existingUser);
+
+                var userDto = new UsuarioDTO
+                {
+                    UsuarioID = existingUser.UsuarioID,
+                    Nombre = existingUser.Nombre,
+                    Apellido = existingUser.Apellido,
+                    Email = existingUser.Email,
+                    FechaRegistro = existingUser.FechaRegistro,
+                    EstaActivo = existingUser.EstaActivo
+                };
+
+                return Ok(new AuthResponseDTO
+                {
+                    User = userDto,
+                    Token = token
+                });
+            }
+            catch (InvalidJwtException)
+            {
+                return BadRequest(new { message = "Token de Google inválido" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al procesar el login con Google" });
             }
         }
 
