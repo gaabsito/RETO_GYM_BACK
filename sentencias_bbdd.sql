@@ -81,6 +81,46 @@ CREATE TABLE Comentarios (
 );
 GO
 
+
+-- 1. Agregar campos de objetivos a la tabla Usuarios existente
+ALTER TABLE Usuarios
+ADD ObjetivoPeso FLOAT NULL,
+    ObjetivoIMC FLOAT NULL,
+    ObjetivoPorcentajeGrasa FLOAT NULL;
+
+-- 2. Crear tabla para almacenar mediciones corporales
+CREATE TABLE Mediciones (
+    MedicionID INT IDENTITY(1,1) PRIMARY KEY,
+    UsuarioID INT NOT NULL REFERENCES Usuarios(UsuarioID) ON DELETE CASCADE,
+    Fecha DATETIME NOT NULL DEFAULT GETDATE(),
+    Peso FLOAT NULL,
+    Altura FLOAT NULL,
+    IMC FLOAT NULL,
+    PorcentajeGrasa FLOAT NULL,
+    CircunferenciaBrazo FLOAT NULL,
+    CircunferenciaPecho FLOAT NULL,
+    CircunferenciaCintura FLOAT NULL,
+    CircunferenciaMuslo FLOAT NULL,
+    Notas VARCHAR(500) NULL
+);
+
+-- 3. Agregar índice para búsqueda rápida por usuario
+CREATE INDEX IDX_Mediciones_Usuario ON Mediciones(UsuarioID);
+
+-- 4. Crear vista para obtener datos resumidos por mes (para gráficas)
+CREATE VIEW MedicionesMensuales AS
+SELECT 
+    UsuarioID,
+    YEAR(Fecha) AS Anio,
+    MONTH(Fecha) AS Mes,
+    AVG(Peso) AS PesoPromedio,
+    AVG(IMC) AS IMCPromedio,
+    AVG(PorcentajeGrasa) AS GrasaPromedio,
+    AVG(CircunferenciaCintura) AS CinturaPromedio
+FROM Mediciones
+GROUP BY UsuarioID, YEAR(Fecha), MONTH(Fecha);
+
+
 -- Índices para mejorar el rendimiento
 CREATE INDEX IDX_Entrenamientos_Autor ON Entrenamientos(AutorID);
 CREATE INDEX IDX_Comentarios_Entrenamiento ON Comentarios(EntrenamientoID);
