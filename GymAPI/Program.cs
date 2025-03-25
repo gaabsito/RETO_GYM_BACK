@@ -51,6 +51,9 @@ builder.Services.AddScoped<IEntrenamientoEjercicioRepository>(provider =>
 builder.Services.AddScoped<IComentarioRepository>(provider =>
     new ComentarioRepository(connectionString));
 
+builder.Services.AddScoped<IMedicionRepository>(provider =>
+    new MedicionRepository(connectionString));
+
 builder.Services.Configure<GoogleAuthSettings>(
     builder.Configuration.GetSection("Authentication:Google"));
     
@@ -60,6 +63,7 @@ builder.Services.AddScoped<IEntrenamientoService, EntrenamientoService>();
 builder.Services.AddScoped<IEjercicioService, EjercicioService>();
 builder.Services.AddScoped<IEntrenamientoEjercicioService, EntrenamientoEjercicioService>();
 builder.Services.AddScoped<IComentarioService, ComentarioService>();
+builder.Services.AddScoped<IMedicionService, MedicionService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
