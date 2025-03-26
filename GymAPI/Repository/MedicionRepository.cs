@@ -34,14 +34,14 @@ namespace GymAPI.Repositories
                             MedicionID = reader.GetInt32(0),
                             UsuarioID = reader.GetInt32(1),
                             Fecha = reader.GetDateTime(2),
-                            Peso = reader.IsDBNull(3) ? null : (float?)reader.GetFloat(3),
-                            Altura = reader.IsDBNull(4) ? null : (float?)reader.GetFloat(4),
-                            IMC = reader.IsDBNull(5) ? null : (float?)reader.GetFloat(5),
-                            PorcentajeGrasa = reader.IsDBNull(6) ? null : (float?)reader.GetFloat(6),
-                            CircunferenciaBrazo = reader.IsDBNull(7) ? null : (float?)reader.GetFloat(7),
-                            CircunferenciaPecho = reader.IsDBNull(8) ? null : (float?)reader.GetFloat(8),
-                            CircunferenciaCintura = reader.IsDBNull(9) ? null : (float?)reader.GetFloat(9),
-                            CircunferenciaMuslo = reader.IsDBNull(10) ? null : (float?)reader.GetFloat(10),
+                            Peso = ConvertToNullableSingle(reader, 3),
+                            Altura = ConvertToNullableSingle(reader, 4),
+                            IMC = ConvertToNullableSingle(reader, 5),
+                            PorcentajeGrasa = ConvertToNullableSingle(reader, 6),
+                            CircunferenciaBrazo = ConvertToNullableSingle(reader, 7),
+                            CircunferenciaPecho = ConvertToNullableSingle(reader, 8),
+                            CircunferenciaCintura = ConvertToNullableSingle(reader, 9),
+                            CircunferenciaMuslo = ConvertToNullableSingle(reader, 10),
                             Notas = reader.IsDBNull(11) ? null : reader.GetString(11)
                         });
                     }
@@ -52,8 +52,6 @@ namespace GymAPI.Repositories
 
         public async Task<Medicion?> GetByIdAsync(int id)
         {
-            Medicion? medicion = null;
-
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
@@ -69,26 +67,26 @@ namespace GymAPI.Repositories
                     {
                         if (await reader.ReadAsync())
                         {
-                            medicion = new Medicion
+                            return new Medicion
                             {
                                 MedicionID = reader.GetInt32(0),
                                 UsuarioID = reader.GetInt32(1),
                                 Fecha = reader.GetDateTime(2),
-                                Peso = reader.IsDBNull(3) ? null : (float?)reader.GetFloat(3),
-                                Altura = reader.IsDBNull(4) ? null : (float?)reader.GetFloat(4),
-                                IMC = reader.IsDBNull(5) ? null : (float?)reader.GetFloat(5),
-                                PorcentajeGrasa = reader.IsDBNull(6) ? null : (float?)reader.GetFloat(6),
-                                CircunferenciaBrazo = reader.IsDBNull(7) ? null : (float?)reader.GetFloat(7),
-                                CircunferenciaPecho = reader.IsDBNull(8) ? null : (float?)reader.GetFloat(8),
-                                CircunferenciaCintura = reader.IsDBNull(9) ? null : (float?)reader.GetFloat(9),
-                                CircunferenciaMuslo = reader.IsDBNull(10) ? null : (float?)reader.GetFloat(10),
+                                Peso = ConvertToNullableSingle(reader, 3),
+                                Altura = ConvertToNullableSingle(reader, 4),
+                                IMC = ConvertToNullableSingle(reader, 5),
+                                PorcentajeGrasa = ConvertToNullableSingle(reader, 6),
+                                CircunferenciaBrazo = ConvertToNullableSingle(reader, 7),
+                                CircunferenciaPecho = ConvertToNullableSingle(reader, 8),
+                                CircunferenciaCintura = ConvertToNullableSingle(reader, 9),
+                                CircunferenciaMuslo = ConvertToNullableSingle(reader, 10),
                                 Notas = reader.IsDBNull(11) ? null : reader.GetString(11)
                             };
                         }
                     }
                 }
             }
-            return medicion;
+            return null;
         }
 
         public async Task<List<Medicion>> GetByUsuarioIdAsync(int usuarioId)
@@ -117,14 +115,14 @@ namespace GymAPI.Repositories
                                 MedicionID = reader.GetInt32(0),
                                 UsuarioID = reader.GetInt32(1),
                                 Fecha = reader.GetDateTime(2),
-                                Peso = reader.IsDBNull(3) ? null : (float?)reader.GetFloat(3),
-                                Altura = reader.IsDBNull(4) ? null : (float?)reader.GetFloat(4),
-                                IMC = reader.IsDBNull(5) ? null : (float?)reader.GetFloat(5),
-                                PorcentajeGrasa = reader.IsDBNull(6) ? null : (float?)reader.GetFloat(6),
-                                CircunferenciaBrazo = reader.IsDBNull(7) ? null : (float?)reader.GetFloat(7),
-                                CircunferenciaPecho = reader.IsDBNull(8) ? null : (float?)reader.GetFloat(8),
-                                CircunferenciaCintura = reader.IsDBNull(9) ? null : (float?)reader.GetFloat(9),
-                                CircunferenciaMuslo = reader.IsDBNull(10) ? null : (float?)reader.GetFloat(10),
+                                Peso = ConvertToNullableSingle(reader, 3),
+                                Altura = ConvertToNullableSingle(reader, 4),
+                                IMC = ConvertToNullableSingle(reader, 5),
+                                PorcentajeGrasa = ConvertToNullableSingle(reader, 6),
+                                CircunferenciaBrazo = ConvertToNullableSingle(reader, 7),
+                                CircunferenciaPecho = ConvertToNullableSingle(reader, 8),
+                                CircunferenciaCintura = ConvertToNullableSingle(reader, 9),
+                                CircunferenciaMuslo = ConvertToNullableSingle(reader, 10),
                                 Notas = reader.IsDBNull(11) ? null : reader.GetString(11)
                             });
                         }
@@ -159,10 +157,10 @@ namespace GymAPI.Repositories
                                 UsuarioID = reader.GetInt32(0),
                                 Anio = reader.GetInt32(1),
                                 Mes = reader.GetInt32(2),
-                                PesoPromedio = reader.IsDBNull(3) ? null : (float?)reader.GetFloat(3),
-                                IMCPromedio = reader.IsDBNull(4) ? null : (float?)reader.GetFloat(4),
-                                GrasaPromedio = reader.IsDBNull(5) ? null : (float?)reader.GetFloat(5),
-                                CinturaPromedio = reader.IsDBNull(6) ? null : (float?)reader.GetFloat(6)
+                                PesoPromedio = ConvertToNullableSingle(reader, 3),
+                                IMCPromedio = ConvertToNullableSingle(reader, 4),
+                                GrasaPromedio = ConvertToNullableSingle(reader, 5),
+                                CinturaPromedio = ConvertToNullableSingle(reader, 6)
                             });
                         }
                     }
@@ -176,8 +174,6 @@ namespace GymAPI.Repositories
             // Calcular IMC si se proporcionan peso y altura
             if (medicion.Peso.HasValue && medicion.Altura.HasValue && medicion.Altura.Value > 0)
             {
-                // IMC = peso(kg) / (altura(m))²
-                // Asumiendo que la altura está en metros
                 medicion.IMC = medicion.Peso.Value / (medicion.Altura.Value * medicion.Altura.Value);
             }
 
@@ -196,15 +192,15 @@ namespace GymAPI.Repositories
                 {
                     command.Parameters.AddWithValue("@UsuarioID", medicion.UsuarioID);
                     command.Parameters.AddWithValue("@Fecha", medicion.Fecha);
-                    command.Parameters.AddWithValue("@Peso", (object?)medicion.Peso ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@Altura", (object?)medicion.Altura ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@IMC", (object?)medicion.IMC ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@PorcentajeGrasa", (object?)medicion.PorcentajeGrasa ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@CircunferenciaBrazo", (object?)medicion.CircunferenciaBrazo ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@CircunferenciaPecho", (object?)medicion.CircunferenciaPecho ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@CircunferenciaCintura", (object?)medicion.CircunferenciaCintura ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@CircunferenciaMuslo", (object?)medicion.CircunferenciaMuslo ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@Notas", (object?)medicion.Notas ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@Peso", medicion.Peso ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@Altura", medicion.Altura ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@IMC", medicion.IMC ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@PorcentajeGrasa", medicion.PorcentajeGrasa ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@CircunferenciaBrazo", medicion.CircunferenciaBrazo ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@CircunferenciaPecho", medicion.CircunferenciaPecho ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@CircunferenciaCintura", medicion.CircunferenciaCintura ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@CircunferenciaMuslo", medicion.CircunferenciaMuslo ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@Notas", medicion.Notas ?? (object)DBNull.Value);
 
                     var result = await command.ExecuteScalarAsync();
                     medicion.MedicionID = Convert.ToInt32(result);
@@ -218,7 +214,6 @@ namespace GymAPI.Repositories
             // Calcular IMC si se actualizaron peso y altura
             if (medicion.Peso.HasValue && medicion.Altura.HasValue && medicion.Altura.Value > 0)
             {
-                // IMC = peso(kg) / (altura(m))²
                 medicion.IMC = medicion.Peso.Value / (medicion.Altura.Value * medicion.Altura.Value);
             }
 
@@ -242,15 +237,15 @@ namespace GymAPI.Repositories
                 {
                     command.Parameters.AddWithValue("@Id", medicion.MedicionID);
                     command.Parameters.AddWithValue("@Fecha", medicion.Fecha);
-                    command.Parameters.AddWithValue("@Peso", (object?)medicion.Peso ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@Altura", (object?)medicion.Altura ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@IMC", (object?)medicion.IMC ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@PorcentajeGrasa", (object?)medicion.PorcentajeGrasa ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@CircunferenciaBrazo", (object?)medicion.CircunferenciaBrazo ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@CircunferenciaPecho", (object?)medicion.CircunferenciaPecho ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@CircunferenciaCintura", (object?)medicion.CircunferenciaCintura ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@CircunferenciaMuslo", (object?)medicion.CircunferenciaMuslo ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@Notas", (object?)medicion.Notas ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@Peso", medicion.Peso ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@Altura", medicion.Altura ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@IMC", medicion.IMC ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@PorcentajeGrasa", medicion.PorcentajeGrasa ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@CircunferenciaBrazo", medicion.CircunferenciaBrazo ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@CircunferenciaPecho", medicion.CircunferenciaPecho ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@CircunferenciaCintura", medicion.CircunferenciaCintura ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@CircunferenciaMuslo", medicion.CircunferenciaMuslo ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@Notas", medicion.Notas ?? (object)DBNull.Value);
 
                     await command.ExecuteNonQueryAsync();
                 }
@@ -269,6 +264,29 @@ namespace GymAPI.Repositories
                     command.Parameters.AddWithValue("@Id", id);
                     await command.ExecuteNonQueryAsync();
                 }
+            }
+        }
+
+        private float? ConvertToNullableSingle(SqlDataReader reader, int columnIndex)
+        {
+            try
+            {
+                if (reader.IsDBNull(columnIndex)) return null;
+
+                object value = reader.GetValue(columnIndex);
+
+                return value switch
+                {
+                    double doubleValue => (float)doubleValue,
+                    float floatValue => floatValue,
+                    decimal decimalValue => (float)decimalValue,
+                    _ => Convert.ToSingle(value)
+                };
+            }
+            catch (Exception ex)
+            {
+
+                return null;
             }
         }
     }
