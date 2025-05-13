@@ -117,7 +117,7 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
-
+app.UseStaticFiles();
 app.UseCors("AllowVueApp");
 
 // 🔹 Habilitar Swagger en todos los entornos

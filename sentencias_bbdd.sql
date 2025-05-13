@@ -14,6 +14,7 @@ CREATE TABLE Usuarios (
     Password VARCHAR(255) NOT NULL,
     FechaRegistro DATETIME DEFAULT GETDATE(),
     EstaActivo BIT DEFAULT 1,
+    FotoPerfilURL NVARCHAR(255) NULL,
     Peso FLOAT NULL,
     Altura FLOAT NULL,
     Genero VARCHAR(20) NULL,
