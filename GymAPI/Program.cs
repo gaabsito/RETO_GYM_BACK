@@ -54,6 +54,10 @@ builder.Services.AddScoped<IComentarioRepository>(provider =>
 builder.Services.AddScoped<IMedicionRepository>(provider =>
     new MedicionRepository(connectionString));
 
+// En la sección donde se registran los repositorios:
+builder.Services.AddScoped<IRutinaCompletadaRepository>(provider =>
+    new RutinaCompletadaRepository(connectionString));
+
 builder.Services.Configure<GoogleAuthSettings>(
     builder.Configuration.GetSection("Authentication:Google"));
     
@@ -64,6 +68,7 @@ builder.Services.AddScoped<IEjercicioService, EjercicioService>();
 builder.Services.AddScoped<IEntrenamientoEjercicioService, EntrenamientoEjercicioService>();
 builder.Services.AddScoped<IComentarioService, ComentarioService>();
 builder.Services.AddScoped<IMedicionService, MedicionService>();
+builder.Services.AddScoped<IRutinaCompletadaService, RutinaCompletadaService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
