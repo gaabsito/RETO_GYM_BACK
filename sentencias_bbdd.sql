@@ -82,7 +82,6 @@ CREATE TABLE Comentarios (
 );
 GO
 
-
 -- 1. Agregar campos de objetivos a la tabla Usuarios existente
 ALTER TABLE Usuarios
 ADD ObjetivoPeso FLOAT NULL,
@@ -122,7 +121,37 @@ FROM Mediciones
 GROUP BY UsuarioID, YEAR(Fecha), MONTH(Fecha);
 
 
+-- Tabla para almacenar las rutinas completadas por los usuarios
+CREATE TABLE RutinasCompletadas (
+    RutinaCompletadaID INT IDENTITY(1,1) PRIMARY KEY,
+    UsuarioID INT NOT NULL REFERENCES Usuarios(UsuarioID) ON DELETE CASCADE,
+    EntrenamientoID INT NOT NULL REFERENCES Entrenamientos(EntrenamientoID) ON DELETE CASCADE,
+    FechaCompletada DATETIME NOT NULL DEFAULT GETDATE(),
+    Notas VARCHAR(500) NULL,
+    DuracionMinutos INT NULL,
+    CaloriasEstimadas INT NULL,
+    NivelEsfuerzoPercibido INT NULL
+);
+
 -- Índices para mejorar el rendimiento
+CREATE INDEX IDX_RutinasCompletadas_Usuario ON RutinasCompletadas(UsuarioID);
+CREATE INDEX IDX_RutinasCompletadas_Entrenamiento ON RutinasCompletadas(EntrenamientoID);
+CREATE INDEX IDX_RutinasCompletadas_Fecha ON RutinasCompletadas(FechaCompletada);
+
+-- Vista para obtener datos resumidos para estadísticas
+CREATE VIEW ResumenRutinasCompletadas AS
+SELECT 
+    UsuarioID,
+    COUNT(*) AS TotalRutinas,
+    SUM(CASE WHEN FechaCompletada >= DATEADD(day, -7, GETDATE()) THEN 1 ELSE 0 END) AS RutinasUltimaSemana,
+    SUM(CASE WHEN FechaCompletada >= DATEADD(day, -30, GETDATE()) THEN 1 ELSE 0 END) AS RutinasUltimoMes,
+    AVG(CAST(NivelEsfuerzoPercibido AS FLOAT)) AS PromedioEsfuerzo,
+    SUM(CaloriasEstimadas) AS CaloriasTotales,
+    SUM(DuracionMinutos) AS MinutosTotales
+FROM RutinasCompletadas
+GROUP BY UsuarioID;
+
+-- Índices para mejorar el rendimiento (solo una vez)
 CREATE INDEX IDX_Entrenamientos_Autor ON Entrenamientos(AutorID);
 CREATE INDEX IDX_Comentarios_Entrenamiento ON Comentarios(EntrenamientoID);
 CREATE INDEX IDX_EntrenamientoEjercicios_Entrenamiento ON EntrenamientoEjercicios(EntrenamientoID);
