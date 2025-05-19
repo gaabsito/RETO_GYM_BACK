@@ -182,74 +182,148 @@ namespace GymAPI.Controllers
             }
         }
 
-        // GET: api/RutinaCompletada/Resumen
-        [HttpGet("Resumen")]
-        public async Task<ActionResult<ApiResponse<ResumenRutinasDTO>>> GetResumen()
+        // GET: api/RutinaCompletada/Calendario
+        [HttpGet("Calendario")]
+        public async Task<ActionResult<ApiResponse<Dictionary<string, int>>>> GetCalendarData([FromQuery] int? month, [FromQuery] int? year)
         {
             try
             {
                 var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (!int.TryParse(userIdClaim, out int userId))
                 {
-                    return Unauthorized(new ApiResponse<ResumenRutinasDTO>
+                    return Unauthorized(new ApiResponse<Dictionary<string, int>>
                     {
                         Success = false,
-                        Message = "Usuario no autorizado"
+                        Message = "Token inválido"
                     });
                 }
 
-                // Obtener datos para el resumen
-                var totalRutinas = await _rutinaCompletadaService.GetTotalCountAsync(userId);
-                var rutinasUltimaSemana = await _rutinaCompletadaService.GetCountLastWeekAsync(userId);
-                var rutinasUltimoMes = await _rutinaCompletadaService.GetCountLastMonthAsync(userId);
-                
-                // Rutina más completada
-                var rutinaFavorita = await _rutinaCompletadaService.GetMostCompletedWorkoutAsync(userId);
-                
-                // Obtener todas las rutinas completadas para calcular promedios
-                var todasLasRutinas = await _rutinaCompletadaService.GetByUsuarioIdAsync(userId);
-                
-                // Calcular estadísticas
-                var promedioEsfuerzo = todasLasRutinas
-                    .Where(r => r.NivelEsfuerzoPercibido.HasValue)
-                    .Select(r => r.NivelEsfuerzoPercibido.Value)
-                    .DefaultIfEmpty(0)
-                    .Average();
-                
-                var caloriasTotales = todasLasRutinas
-                    .Where(r => r.CaloriasEstimadas.HasValue)
-                    .Sum(r => r.CaloriasEstimadas.Value);
-                
-                var minutosTotales = todasLasRutinas
-                    .Where(r => r.DuracionMinutos.HasValue)
-                    .Sum(r => r.DuracionMinutos.Value);
+                // Si no se proporciona mes/año, usar el actual
+                int currentMonth = month ?? DateTime.Now.Month;
+                int currentYear = year ?? DateTime.Now.Year;
 
-                // Crear DTO de resumen
-                var resumen = new ResumenRutinasDTO
-                {
-                    TotalRutinasCompletadas = totalRutinas,
-                    RutinasUltimaSemana = rutinasUltimaSemana,
-                    RutinasUltimoMes = rutinasUltimoMes,
-                    PromedioEsfuerzo = Math.Round(promedioEsfuerzo, 1),
-                    CaloriasTotales = caloriasTotales,
-                    MinutosTotales = minutosTotales,
-                    EntrenamientoIDMasRepetido = rutinaFavorita.EntrenamientoID > 0 ? rutinaFavorita.EntrenamientoID : null,
-                    NombreEntrenamientoMasRepetido = !string.IsNullOrEmpty(rutinaFavorita.Nombre) ? rutinaFavorita.Nombre : null,
-                    VecesCompletado = rutinaFavorita.Veces > 0 ? rutinaFavorita.Veces : null
-                };
+                var calendarData = await _rutinaCompletadaService.GetCalendarDataAsync(userId, currentMonth, currentYear);
+                
+                // Convertir claves a formato de string para la serialización JSON
+                var result = calendarData.ToDictionary(
+                    kvp => kvp.Key.ToString("yyyy-MM-dd"), 
+                    kvp => kvp.Value
+                );
 
-                return Ok(new ApiResponse<ResumenRutinasDTO>
+                return Ok(new ApiResponse<Dictionary<string, int>>
                 {
                     Success = true,
-                    Data = resumen
+                    Data = result
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ApiResponse<ResumenRutinasDTO>
+                return StatusCode(500, new ApiResponse<Dictionary<string, int>>
                 {
                     Success = false,
-                    Message = "Error al obtener resumen de rutinas: " + ex.Message
+                    Message = $"Error interno del servidor: {ex.Message}"
+                });
+            }
+        }
+
+        // GET: api/RutinaCompletada/Resumen
+        [HttpGet("Resumen")]
+        public async Task<ActionResult<ApiResponse<RutinaEstadisticasDTO>>> GetEstadisticas()
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userIdClaim, out int userId))
+                {
+                    return Unauthorized(new ApiResponse<RutinaEstadisticasDTO>
+                    {
+                        Success = false,
+                        Message = "Token inválido"
+                    });
+                }
+
+                var estadisticas = await _rutinaCompletadaService.GetEstadisticasUsuarioAsync(userId);
+
+                return Ok(new ApiResponse<RutinaEstadisticasDTO>
+                {
+                    Success = true,
+                    Data = estadisticas
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<RutinaEstadisticasDTO>
+                {
+                    Success = false,
+                    Message = $"Error interno del servidor: {ex.Message}"
+                });
+            }
+        }
+
+        // GET: api/RutinaCompletada/DiasUnicosEstaSemana
+        [HttpGet("DiasUnicosEstaSemana")]
+        public async Task<ActionResult<ApiResponse<int>>> GetUniqueTrainingDaysThisWeek()
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userIdClaim, out int userId))
+                {
+                    return Unauthorized(new ApiResponse<int>
+                    {
+                        Success = false,
+                        Message = "Token inválido"
+                    });
+                }
+
+                int diasUnicos = await _rutinaCompletadaService.GetUniqueTrainingDaysThisWeekAsync(userId);
+
+                return Ok(new ApiResponse<int>
+                {
+                    Success = true,
+                    Data = diasUnicos
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<int>
+                {
+                    Success = false,
+                    Message = $"Error interno del servidor: {ex.Message}"
+                });
+            }
+        }
+
+        // GET: api/RutinaCompletada/HistorialSemanal
+        [HttpGet("HistorialSemanal")]
+        public async Task<ActionResult<ApiResponse<Dictionary<int, int>>>> GetWeeklyHistory([FromQuery] int numberOfWeeks = 8)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userIdClaim, out int userId))
+                {
+                    return Unauthorized(new ApiResponse<Dictionary<int, int>>
+                    {
+                        Success = false,
+                        Message = "Token inválido"
+                    });
+                }
+
+                var historialSemanal = await _rutinaCompletadaService.GetUniqueTrainingDaysLastWeeksAsync(userId, numberOfWeeks);
+
+                return Ok(new ApiResponse<Dictionary<int, int>>
+                {
+                    Success = true,
+                    Data = historialSemanal
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<Dictionary<int, int>>
+                {
+                    Success = false,
+                    Message = $"Error interno del servidor: {ex.Message}"
                 });
             }
         }

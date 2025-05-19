@@ -19,10 +19,9 @@ namespace GymAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = @"SELECT rc.RutinaCompletadaID, rc.UsuarioID, rc.EntrenamientoID, 
-                                rc.FechaCompletada, rc.Notas, rc.DuracionMinutos, 
-                                rc.CaloriasEstimadas, rc.NivelEsfuerzoPercibido
-                                FROM RutinasCompletadas rc";
+                string query = @"SELECT RutinaCompletadaID, UsuarioID, EntrenamientoID, 
+                               FechaCompletada, Notas, DuracionMinutos, 
+                               CaloriasEstimadas, NivelEsfuerzoPercibido FROM RutinasCompletadas";
 
                 using (var command = new SqlCommand(query, connection))
                 using (var reader = await command.ExecuteReaderAsync())
@@ -43,20 +42,21 @@ namespace GymAPI.Repositories
                     }
                 }
             }
-
             return rutinasCompletadas;
         }
 
         public async Task<RutinaCompletada?> GetByIdAsync(int id)
         {
+            RutinaCompletada? rutinaCompletada = null;
+
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = @"SELECT rc.RutinaCompletadaID, rc.UsuarioID, rc.EntrenamientoID, 
-                                rc.FechaCompletada, rc.Notas, rc.DuracionMinutos, 
-                                rc.CaloriasEstimadas, rc.NivelEsfuerzoPercibido
-                                FROM RutinasCompletadas rc
-                                WHERE rc.RutinaCompletadaID = @Id";
+                string query = @"SELECT RutinaCompletadaID, UsuarioID, EntrenamientoID, 
+                               FechaCompletada, Notas, DuracionMinutos, 
+                               CaloriasEstimadas, NivelEsfuerzoPercibido 
+                               FROM RutinasCompletadas 
+                               WHERE RutinaCompletadaID = @Id";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -65,7 +65,7 @@ namespace GymAPI.Repositories
                     {
                         if (await reader.ReadAsync())
                         {
-                            return new RutinaCompletada
+                            rutinaCompletada = new RutinaCompletada
                             {
                                 RutinaCompletadaID = reader.GetInt32(0),
                                 UsuarioID = reader.GetInt32(1),
@@ -80,8 +80,7 @@ namespace GymAPI.Repositories
                     }
                 }
             }
-
-            return null;
+            return rutinaCompletada;
         }
 
         public async Task<List<RutinaCompletada>> GetByUsuarioIdAsync(int usuarioId)
@@ -140,12 +139,12 @@ namespace GymAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = @"SELECT rc.RutinaCompletadaID, rc.UsuarioID, rc.EntrenamientoID, 
-                                rc.FechaCompletada, rc.Notas, rc.DuracionMinutos, 
-                                rc.CaloriasEstimadas, rc.NivelEsfuerzoPercibido
-                                FROM RutinasCompletadas rc
-                                WHERE rc.EntrenamientoID = @EntrenamientoId
-                                ORDER BY rc.FechaCompletada DESC";
+                string query = @"SELECT RutinaCompletadaID, UsuarioID, EntrenamientoID, 
+                                FechaCompletada, Notas, DuracionMinutos, 
+                                CaloriasEstimadas, NivelEsfuerzoPercibido
+                                FROM RutinasCompletadas
+                                WHERE EntrenamientoID = @EntrenamientoId
+                                ORDER BY FechaCompletada DESC";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -180,12 +179,12 @@ namespace GymAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = @"SELECT rc.RutinaCompletadaID, rc.UsuarioID, rc.EntrenamientoID, 
-                                rc.FechaCompletada, rc.Notas, rc.DuracionMinutos, 
-                                rc.CaloriasEstimadas, rc.NivelEsfuerzoPercibido
-                                FROM RutinasCompletadas rc
-                                WHERE rc.UsuarioID = @UsuarioId AND rc.EntrenamientoID = @EntrenamientoId
-                                ORDER BY rc.FechaCompletada DESC";
+                string query = @"SELECT RutinaCompletadaID, UsuarioID, EntrenamientoID, 
+                                FechaCompletada, Notas, DuracionMinutos, 
+                                CaloriasEstimadas, NivelEsfuerzoPercibido
+                                FROM RutinasCompletadas
+                                WHERE UsuarioID = @UsuarioId AND EntrenamientoID = @EntrenamientoId
+                                ORDER BY FechaCompletada DESC";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -366,6 +365,137 @@ namespace GymAPI.Repositories
                     }
                 }
             }
+        }
+
+        // MÉTODO PARA BUSCAR POR PERÍODO
+        public async Task<List<RutinaCompletada>> GetByUsuarioIdAndPeriodAsync(int usuarioId, int month, int year)
+        {
+            var rutinasCompletadas = new List<RutinaCompletada>();
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                string query = @"SELECT rc.RutinaCompletadaID, rc.UsuarioID, rc.EntrenamientoID, 
+                                rc.FechaCompletada, rc.Notas, rc.DuracionMinutos, 
+                                rc.CaloriasEstimadas, rc.NivelEsfuerzoPercibido,
+                                e.Titulo as NombreEntrenamiento, e.Dificultad
+                                FROM RutinasCompletadas rc
+                                LEFT JOIN Entrenamientos e ON rc.EntrenamientoID = e.EntrenamientoID
+                                WHERE rc.UsuarioID = @UsuarioId
+                                AND MONTH(rc.FechaCompletada) = @Month
+                                AND YEAR(rc.FechaCompletada) = @Year
+                                ORDER BY rc.FechaCompletada DESC";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@UsuarioId", usuarioId);
+                    command.Parameters.AddWithValue("@Month", month);
+                    command.Parameters.AddWithValue("@Year", year);
+                    
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var rutinaCompletada = new RutinaCompletada
+                            {
+                                RutinaCompletadaID = reader.GetInt32(0),
+                                UsuarioID = reader.GetInt32(1),
+                                EntrenamientoID = reader.GetInt32(2),
+                                FechaCompletada = reader.GetDateTime(3),
+                                Notas = reader.IsDBNull(4) ? null : reader.GetString(4),
+                                DuracionMinutos = reader.IsDBNull(5) ? null : (int?)reader.GetInt32(5),
+                                CaloriasEstimadas = reader.IsDBNull(6) ? null : (int?)reader.GetInt32(6),
+                                NivelEsfuerzoPercibido = reader.IsDBNull(7) ? null : (int?)reader.GetInt32(7)
+                            };
+
+                            // Solo agregar información del entrenamiento si no es NULL
+                            if (!reader.IsDBNull(8))
+                            {
+                                rutinaCompletada.Entrenamiento = new Entrenamiento
+                                {
+                                    Titulo = reader.GetString(8),
+                                    Dificultad = reader.IsDBNull(9) ? "" : reader.GetString(9)
+                                };
+                            }
+                            
+                            rutinasCompletadas.Add(rutinaCompletada);
+                        }
+                    }
+                }
+            }
+
+            return rutinasCompletadas;
+        }
+
+        // NUEVO MÉTODO PARA CONTAR DÍAS ÚNICOS ENTRENADOS EN LA SEMANA ACTUAL
+        public async Task<int> GetUniqueTrainingDaysThisWeekAsync(int usuarioId)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                // Esta consulta cuenta los días DISTINTOS en la semana actual
+                // usando DATEPART(ww, GETDATE()) para obtener el número de semana del año actual
+                string query = @"
+                    SELECT COUNT(DISTINCT CAST(FechaCompletada AS DATE)) 
+                    FROM RutinasCompletadas 
+                    WHERE UsuarioID = @UsuarioId 
+                      AND DATEPART(ww, FechaCompletada) = DATEPART(ww, GETDATE())
+                      AND DATEPART(yyyy, FechaCompletada) = DATEPART(yyyy, GETDATE())";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@UsuarioId", usuarioId);
+                    return Convert.ToInt32(await command.ExecuteScalarAsync());
+                }
+            }
+        }
+
+        // MÉTODO PARA OBTENER ESTADÍSTICAS POR SEMANA
+        public async Task<Dictionary<int, int>> GetUniqueTrainingDaysLastWeeksAsync(int usuarioId, int numberOfWeeks)
+        {
+            var trainingDaysByWeek = new Dictionary<int, int>();
+            
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                // Esta consulta obtiene el conteo de días únicos por semana para las últimas N semanas
+                string query = @"
+                    WITH WeeklyTrainingData AS (
+                        SELECT 
+                            DATEPART(ww, FechaCompletada) AS WeekNumber,
+                            DATEPART(yyyy, FechaCompletada) AS Year,
+                            CAST(FechaCompletada AS DATE) AS TrainingDate
+                        FROM RutinasCompletadas 
+                        WHERE UsuarioID = @UsuarioId 
+                          AND FechaCompletada >= DATEADD(WEEK, -@NumberOfWeeks, GETDATE())
+                    )
+                    SELECT WeekNumber, Year, COUNT(DISTINCT TrainingDate) AS UniqueTrainingDays
+                    FROM WeeklyTrainingData
+                    GROUP BY WeekNumber, Year
+                    ORDER BY Year DESC, WeekNumber DESC";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@UsuarioId", usuarioId);
+                    command.Parameters.AddWithValue("@NumberOfWeeks", numberOfWeeks);
+                    
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            int weekNumber = reader.GetInt32(0);
+                            int year = reader.GetInt32(1);
+                            int trainingDays = reader.GetInt32(2);
+                            
+                            // Usamos una clave compuesta (año-semana) para identificar cada semana de forma única
+                            int weekKey = year * 100 + weekNumber;
+                            trainingDaysByWeek.Add(weekKey, trainingDays);
+                        }
+                    }
+                }
+            }
+            
+            return trainingDaysByWeek;
         }
     }
 }

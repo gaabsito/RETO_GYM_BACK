@@ -69,6 +69,8 @@ builder.Services.AddScoped<IEntrenamientoEjercicioService, EntrenamientoEjercici
 builder.Services.AddScoped<IComentarioService, ComentarioService>();
 builder.Services.AddScoped<IMedicionService, MedicionService>();
 builder.Services.AddScoped<IRutinaCompletadaService, RutinaCompletadaService>();
+// Registrar servicio de roles
+builder.Services.AddScoped<IRolService, RolService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

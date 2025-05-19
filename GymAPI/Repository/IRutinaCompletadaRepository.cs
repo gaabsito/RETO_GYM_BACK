@@ -18,5 +18,14 @@ namespace GymAPI.Repositories
         Task<int> GetCountLastMonthAsync(int usuarioId);
         Task<int> GetTotalCountAsync(int usuarioId);
         Task<(int EntrenamientoID, string Nombre, int Veces)> GetMostCompletedWorkoutAsync(int usuarioId);
+        
+        // Nuevo método para buscar por período
+        Task<List<RutinaCompletada>> GetByUsuarioIdAndPeriodAsync(int usuarioId, int month, int year);
+        
+        // Nuevo método para contar días únicos entrenados esta semana
+        Task<int> GetUniqueTrainingDaysThisWeekAsync(int usuarioId);
+        
+        // Método adicional para obtener estadísticas por semanas
+        Task<Dictionary<int, int>> GetUniqueTrainingDaysLastWeeksAsync(int usuarioId, int numberOfWeeks);
     }
 }

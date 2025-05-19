@@ -1,4 +1,5 @@
 using GymAPI.Models;
+using GymAPI.DTOs;
 
 namespace GymAPI.Services
 {
@@ -18,5 +19,16 @@ namespace GymAPI.Services
         Task<int> GetCountLastMonthAsync(int usuarioId);
         Task<int> GetTotalCountAsync(int usuarioId);
         Task<(int EntrenamientoID, string Nombre, int Veces)> GetMostCompletedWorkoutAsync(int usuarioId);
+        
+        // Nuevos métodos
+        Task<List<RutinaCompletada>> GetByUsuarioIdAndFechaAsync(int usuarioId, int month, int year);
+        Task<Dictionary<DateTime, int>> GetCalendarDataAsync(int usuarioId, int month, int year);
+        Task<RutinaEstadisticasDTO> GetEstadisticasUsuarioAsync(int usuarioId);
+        
+        // Nuevo método para días únicos entrenados esta semana
+        Task<int> GetUniqueTrainingDaysThisWeekAsync(int usuarioId);
+        
+        // Método adicional para estadísticas semanales
+        Task<Dictionary<int, int>> GetUniqueTrainingDaysLastWeeksAsync(int usuarioId, int numberOfWeeks);
     }
 }

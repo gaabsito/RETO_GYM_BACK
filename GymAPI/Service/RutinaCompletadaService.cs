@@ -1,5 +1,6 @@
 using GymAPI.Models;
 using GymAPI.Repositories;
+using GymAPI.DTOs;
 
 namespace GymAPI.Services
 {
@@ -70,6 +71,106 @@ namespace GymAPI.Services
         public async Task<(int EntrenamientoID, string Nombre, int Veces)> GetMostCompletedWorkoutAsync(int usuarioId)
         {
             return await _repository.GetMostCompletedWorkoutAsync(usuarioId);
+        }
+
+        // NUEVOS MÉTODOS
+
+        public async Task<List<RutinaCompletada>> GetByUsuarioIdAndFechaAsync(int usuarioId, int month, int year)
+        {
+            return await _repository.GetByUsuarioIdAndPeriodAsync(usuarioId, month, year);
+        }
+
+        public async Task<Dictionary<DateTime, int>> GetCalendarDataAsync(int usuarioId, int month, int year)
+        {
+            var rutinas = await _repository.GetByUsuarioIdAndPeriodAsync(usuarioId, month, year);
+            
+            // Agrupar por fecha para tener un conteo por día
+            var calendar = rutinas
+                .GroupBy(r => r.FechaCompletada.Date)
+                .ToDictionary(g => g.Key, g => g.Count());
+            
+            return calendar;
+        }
+
+        public async Task<RutinaEstadisticasDTO> GetEstadisticasUsuarioAsync(int usuarioId)
+        {
+            // Obtener el número de la semana actual
+            int semanaActual = System.Globalization.ISOWeek.GetWeekOfYear(DateTime.Now);
+            
+            var estadisticas = new RutinaEstadisticasDTO
+            {
+                TotalRutinasCompletadas = await GetTotalCountAsync(usuarioId),
+                RutinasUltimaSemana = await GetCountLastWeekAsync(usuarioId),
+                RutinasUltimoMes = await GetCountLastMonthAsync(usuarioId),
+                DiasUnicosEntrenadosEstaSemana = await GetUniqueTrainingDaysThisWeekAsync(usuarioId),
+                SemanaActual = semanaActual
+            };
+            
+            // Obtener todas las rutinas completadas del usuario
+            var rutinas = await GetByUsuarioIdAsync(usuarioId);
+            
+            // Calcular estadísticas adicionales si hay rutinas
+            if (rutinas.Any())
+            {
+                // Promedio de esfuerzo percibido
+                var esfuerzos = rutinas
+                    .Where(r => r.NivelEsfuerzoPercibido.HasValue)
+                    .Select(r => r.NivelEsfuerzoPercibido.Value);
+                
+                estadisticas.PromedioEsfuerzo = esfuerzos.Any() 
+                    ? esfuerzos.Average() 
+                    : 0;
+                
+                // Suma de calorías estimadas
+                estadisticas.CaloriasTotales = rutinas
+                    .Where(r => r.CaloriasEstimadas.HasValue)
+                    .Select(r => r.CaloriasEstimadas.Value)
+                    .Sum();
+                
+                // Suma de minutos de duración
+                estadisticas.MinutosTotales = rutinas
+                    .Where(r => r.DuracionMinutos.HasValue)
+                    .Select(r => r.DuracionMinutos.Value)
+                    .Sum();
+                
+                // Entrenamiento más repetido
+                var entrenamientoMasCompletado = await GetMostCompletedWorkoutAsync(usuarioId);
+                if (entrenamientoMasCompletado.EntrenamientoID != 0)
+                {
+                    estadisticas.EntrenamientoIDMasRepetido = entrenamientoMasCompletado.EntrenamientoID;
+                    estadisticas.NombreEntrenamientoMasRepetido = entrenamientoMasCompletado.Nombre;
+                    estadisticas.VecesCompletado = entrenamientoMasCompletado.Veces;
+                }
+                
+                // Generar datos para el calendario
+                estadisticas.DiasEntrenados = rutinas
+                    .OrderByDescending(r => r.FechaCompletada)
+                    .Select(r => new FechaEntrenoDTO
+                    {
+                        Fecha = r.FechaCompletada,
+                        EntrenamientoID = r.EntrenamientoID,
+                        NombreEntrenamiento = r.Entrenamiento?.Titulo ?? "Sin nombre"
+                    })
+                    .ToList();
+                
+                // Añadir datos de días entrenados por semana (últimas 8 semanas)
+                var diasPorSemana = await GetUniqueTrainingDaysLastWeeksAsync(usuarioId, 8);
+                estadisticas.DiasUnicosPorSemana = diasPorSemana;
+            }
+            
+            return estadisticas;
+        }
+        
+        // Nuevo método para días únicos entrenados esta semana
+        public async Task<int> GetUniqueTrainingDaysThisWeekAsync(int usuarioId)
+        {
+            return await _repository.GetUniqueTrainingDaysThisWeekAsync(usuarioId);
+        }
+        
+        // Método para estadísticas semanales
+        public async Task<Dictionary<int, int>> GetUniqueTrainingDaysLastWeeksAsync(int usuarioId, int numberOfWeeks)
+        {
+            return await _repository.GetUniqueTrainingDaysLastWeeksAsync(usuarioId, numberOfWeeks);
         }
     }
 }
