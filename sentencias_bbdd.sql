@@ -132,35 +132,31 @@ CREATE TABLE RutinasCompletadas (
     NivelEsfuerzoPercibido INT NULL
 );
 
--- Índices para mejorar el rendimiento
-CREATE INDEX IDX_RutinasCompletadas_Usuario ON RutinasCompletadas(UsuarioID);
-CREATE INDEX IDX_RutinasCompletadas_Entrenamiento ON RutinasCompletadas(EntrenamientoID);
-CREATE INDEX IDX_RutinasCompletadas_Fecha ON RutinasCompletadas(FechaCompletada);
+-- Tabla de Logros
+CREATE TABLE Logros (
+    LogroID INT IDENTITY(1,1) PRIMARY KEY,
+    Nombre NVARCHAR(100) NOT NULL,
+    Descripcion NVARCHAR(255) NOT NULL,
+    Icono NVARCHAR(50) NOT NULL,
+    Color NVARCHAR(20) NOT NULL,
+    Experiencia INT NOT NULL DEFAULT 10,
+    Categoria NVARCHAR(50) NOT NULL,
+    CondicionLogro NVARCHAR(50) NOT NULL,
+    ValorMeta INT NOT NULL,
+    Secreto BIT NOT NULL DEFAULT 0
+);
 
--- Vista para obtener datos resumidos para estadísticas
-CREATE VIEW ResumenRutinasCompletadas AS
-SELECT 
-    UsuarioID,
-    COUNT(*) AS TotalRutinas,
-    SUM(CASE WHEN FechaCompletada >= DATEADD(day, -7, GETDATE()) THEN 1 ELSE 0 END) AS RutinasUltimaSemana,
-    SUM(CASE WHEN FechaCompletada >= DATEADD(day, -30, GETDATE()) THEN 1 ELSE 0 END) AS RutinasUltimoMes,
-    AVG(CAST(NivelEsfuerzoPercibido AS FLOAT)) AS PromedioEsfuerzo,
-    SUM(CaloriasEstimadas) AS CaloriasTotales,
-    SUM(DuracionMinutos) AS MinutosTotales
-FROM RutinasCompletadas
-GROUP BY UsuarioID;
-
-
--- Tabla para almacenar las rutinas completadas por los usuarios
-CREATE TABLE RutinasCompletadas (
-    RutinaCompletadaID INT IDENTITY(1,1) PRIMARY KEY,
-    UsuarioID INT NOT NULL REFERENCES Usuarios(UsuarioID) ON DELETE CASCADE,
-    EntrenamientoID INT NOT NULL REFERENCES Entrenamientos(EntrenamientoID) ON DELETE CASCADE,
-    FechaCompletada DATETIME NOT NULL DEFAULT GETDATE(),
-    Notas VARCHAR(500) NULL,
-    DuracionMinutos INT NULL,
-    CaloriasEstimadas INT NULL,
-    NivelEsfuerzoPercibido INT NULL
+-- Tabla de relación Usuario-Logro
+CREATE TABLE UsuarioLogros (
+    UsuarioLogroID INT IDENTITY(1,1) PRIMARY KEY,
+    UsuarioID INT NOT NULL,
+    LogroID INT NOT NULL,
+    FechaDesbloqueo DATETIME NULL,
+    ProgresoActual INT NOT NULL DEFAULT 0,
+    Desbloqueado BIT NOT NULL DEFAULT 0,
+    CONSTRAINT FK_UsuarioLogros_Usuarios FOREIGN KEY (UsuarioID) REFERENCES Usuarios(UsuarioID),
+    CONSTRAINT FK_UsuarioLogros_Logros FOREIGN KEY (LogroID) REFERENCES Logros(LogroID),
+    CONSTRAINT UQ_UsuarioLogros UNIQUE (UsuarioID, LogroID)
 );
 
 -- Índices para mejorar el rendimiento
