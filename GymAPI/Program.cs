@@ -38,29 +38,28 @@ var connectionString = builder.Configuration.GetConnectionString("GymappDB");
 // 🔹 Registrar los repositorios con la cadena de conexión
 builder.Services.AddScoped<IUsuarioRepository>(provider =>
     new UsuarioRepository(connectionString));
-
 builder.Services.AddScoped<IEntrenamientoRepository>(provider =>
     new EntrenamientoRepository(connectionString));
-
 builder.Services.AddScoped<IEjercicioRepository>(provider =>
     new EjercicioRepository(connectionString));
-
 builder.Services.AddScoped<IEntrenamientoEjercicioRepository>(provider =>
     new EntrenamientoEjercicioRepository(connectionString));
-
 builder.Services.AddScoped<IComentarioRepository>(provider =>
     new ComentarioRepository(connectionString));
-
 builder.Services.AddScoped<IMedicionRepository>(provider =>
     new MedicionRepository(connectionString));
-
-// En la sección donde se registran los repositorios:
 builder.Services.AddScoped<IRutinaCompletadaRepository>(provider =>
     new RutinaCompletadaRepository(connectionString));
 
+// Registrar repositorios de logros con la cadena de conexión
+builder.Services.AddScoped<ILogroRepository>(provider => 
+    new LogroRepository(connectionString));
+builder.Services.AddScoped<IUsuarioLogroRepository>(provider => 
+    new UsuarioLogroRepository(connectionString));
+
 builder.Services.Configure<GoogleAuthSettings>(
     builder.Configuration.GetSection("Authentication:Google"));
-    
+
 // 🔹 Registrar los servicios
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IEntrenamientoService, EntrenamientoService>();
@@ -69,6 +68,8 @@ builder.Services.AddScoped<IEntrenamientoEjercicioService, EntrenamientoEjercici
 builder.Services.AddScoped<IComentarioService, ComentarioService>();
 builder.Services.AddScoped<IMedicionService, MedicionService>();
 builder.Services.AddScoped<IRutinaCompletadaService, RutinaCompletadaService>();
+builder.Services.AddScoped<ILogroService, LogroService>();
+
 // Registrar servicio de roles
 builder.Services.AddScoped<IRolService, RolService>();
 
@@ -78,12 +79,11 @@ builder.Services.AddEndpointsApiExplorer();
 // 🔹 Configurar Swagger para autenticación - SIEMPRE habilitado
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { 
-        Title = "GymAPI", 
+    c.SwaggerDoc("v1", new OpenApiInfo {
+        Title = "GymAPI",
         Version = "v1",
-        Description = "API para aplicación de entrenamiento personal" 
+        Description = "API para aplicación de entrenamiento personal"
     });
-    
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -93,7 +93,6 @@ builder.Services.AddSwaggerGen(c =>
         In = ParameterLocation.Header,
         Description = "Ingrese el token en el formato: Bearer {token}"
     });
-
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -124,6 +123,7 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
 app.UseStaticFiles();
 app.UseCors("AllowVueApp");
 

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using GymAPI.Services;
 using GymAPI.DTOs;
+using GymAPI.Models;
 
 namespace GymAPI.Controllers
 {
@@ -19,6 +20,7 @@ namespace GymAPI.Controllers
             _logroService = logroService;
         }
 
+        // GET: api/Logro
         [HttpGet]
         public async Task<ActionResult<ApiResponse<List<UsuarioLogroDTO>>>> GetLogrosUsuario()
         {
@@ -52,6 +54,7 @@ namespace GymAPI.Controllers
             }
         }
 
+        // GET: api/Logro/disponibles
         [HttpGet("disponibles")]
         public async Task<ActionResult<ApiResponse<List<LogroDTO>>>> GetLogrosDisponibles()
         {
@@ -85,6 +88,7 @@ namespace GymAPI.Controllers
             }
         }
 
+        // GET: api/Logro/recientes
         [HttpGet("recientes")]
         public async Task<ActionResult<ApiResponse<List<UsuarioLogroDTO>>>> GetLogrosRecientes([FromQuery] int cantidad = 5)
         {
@@ -110,6 +114,10 @@ namespace GymAPI.Controllers
             }
             catch (Exception ex)
             {
+                // Registrar el error para depuración
+                Console.WriteLine($"Error en GetLogrosRecientes: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                
                 return StatusCode(500, new ApiResponse<List<UsuarioLogroDTO>>
                 {
                     Success = false,
@@ -118,6 +126,7 @@ namespace GymAPI.Controllers
             }
         }
 
+        // GET: api/Logro/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<ApiResponse<UsuarioLogroDTO>>> GetLogro(int id)
         {
@@ -129,7 +138,6 @@ namespace GymAPI.Controllers
                     return Unauthorized(new ApiResponse<UsuarioLogroDTO>
                     {
                         Success = false,
-                        // Continuación de GymAPI/Controllers/LogroController.cs
                         Message = "Usuario no autorizado"
                     });
                 }
@@ -160,6 +168,7 @@ namespace GymAPI.Controllers
             }
         }
 
+        // POST: api/Logro/verificar
         [HttpPost("verificar")]
         public async Task<ActionResult<ApiResponse<bool>>> VerificarLogros()
         {
