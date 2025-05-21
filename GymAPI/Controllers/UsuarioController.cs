@@ -4,6 +4,13 @@ using System.Security.Claims;
 using GymAPI.Models;
 using GymAPI.Services;
 using GymAPI.DTOs;
+using GymAPI.Utilities;
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
 
 namespace GymAPI.Controllers
 {
@@ -12,10 +19,12 @@ namespace GymAPI.Controllers
     public class UsuarioController : ControllerBase
     {
         private readonly IUsuarioService _service;
+        private readonly IImageService _imageService;
 
-        public UsuarioController(IUsuarioService service)
+        public UsuarioController(IUsuarioService service, IImageService imageService)
         {
             _service = service;
+            _imageService = imageService;
         }
 
         [HttpGet]
@@ -167,75 +176,49 @@ namespace GymAPI.Controllers
                 }
 
                 // Validar el archivo
-                if (file == null || file.Length == 0)
+                if (!FileValidationHelper.ValidateImageFile(file, out string errorMessage))
                 {
                     return BadRequest(new ApiResponse<string>
                     {
                         Success = false,
-                        Message = "No se ha proporcionado ningún archivo"
-                    });
-                }
-
-                // Validar formato (solo imágenes)
-                var allowedTypes = new[] { "image/jpeg", "image/png", "image/gif" };
-                if (!allowedTypes.Contains(file.ContentType))
-                {
-                    return BadRequest(new ApiResponse<string>
-                    {
-                        Success = false,
-                        Message = "El formato de archivo no es válido. Use JPEG, PNG o GIF."
-                    });
-                }
-
-                // Validar tamaño (máximo 2MB)
-                if (file.Length > 2 * 1024 * 1024)
-                {
-                    return BadRequest(new ApiResponse<string>
-                    {
-                        Success = false,
-                        Message = "El archivo es demasiado grande. Máximo 2MB."
+                        Message = errorMessage
                     });
                 }
 
                 // Eliminar la foto anterior si existe
                 if (!string.IsNullOrEmpty(user.FotoPerfilURL))
                 {
-                    string oldFileName = Path.GetFileName(user.FotoPerfilURL);
-                    string oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", oldFileName);
-                    
-                    if (System.IO.File.Exists(oldFilePath))
+                    try
                     {
-                        System.IO.File.Delete(oldFilePath);
+                        // Extraer el publicId de la URL de Cloudinary
+                        var uri = new Uri(user.FotoPerfilURL);
+                        var pathSegments = uri.PathAndQuery.Split('/');
+                        string fileName = pathSegments.Last().Split('.')[0]; // Obtener el nombre sin extensión
+                        
+                        // El publicId puede ser la ruta completa en Cloudinary (folder/filename)
+                        string publicId = $"usuarios/{fileName}";
+                        
+                        await _imageService.DeleteImageAsync(publicId);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log el error pero continúa con la actualización
+                        Console.WriteLine($"Error al eliminar imagen anterior: {ex.Message}");
                     }
                 }
 
-                // Generar un nombre de archivo único
-                string fileName = $"{userId}_{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-                string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profiles");
-                
-                // Crear el directorio si no existe
-                if (!Directory.Exists(uploadsFolder))
-                {
-                    Directory.CreateDirectory(uploadsFolder);
-                }
-
-                // Guardar el archivo
-                string filePath = Path.Combine(uploadsFolder, fileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
-                }
+                // Subir nueva imagen a Cloudinary
+                string imageUrl = await _imageService.UploadImageAsync(file);
 
                 // Actualizar la URL de la foto de perfil en la base de datos
-                string fileUrl = $"/uploads/profiles/{fileName}";
-                user.FotoPerfilURL = fileUrl;
+                user.FotoPerfilURL = imageUrl;
                 await _service.UpdateAsync(user);
 
                 // Devolver la URL de la foto
                 return Ok(new ApiResponse<string>
                 {
                     Success = true,
-                    Data = fileUrl,
+                    Data = imageUrl,
                     Message = "Foto de perfil actualizada correctamente"
                 });
             }
@@ -282,13 +265,22 @@ namespace GymAPI.Controllers
                     });
                 }
 
-                // Eliminar el archivo si existe
-                string fileName = Path.GetFileName(user.FotoPerfilURL);
-                string filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profiles", fileName);
-                
-                if (System.IO.File.Exists(filePath))
+                try
                 {
-                    System.IO.File.Delete(filePath);
+                    // Extraer el publicId de la URL de Cloudinary
+                    var uri = new Uri(user.FotoPerfilURL);
+                    var pathSegments = uri.PathAndQuery.Split('/');
+                    string fileName = pathSegments.Last().Split('.')[0]; // Obtener el nombre sin extensión
+                    
+                    // El publicId puede ser la ruta completa en Cloudinary (folder/filename)
+                    string publicId = $"usuarios/{fileName}";
+                    
+                    await _imageService.DeleteImageAsync(publicId);
+                }
+                catch (Exception ex)
+                {
+                    // Log el error pero continúa con la actualización
+                    Console.WriteLine($"Error al eliminar imagen de Cloudinary: {ex.Message}");
                 }
 
                 // Actualizar el usuario en la base de datos
@@ -385,6 +377,26 @@ namespace GymAPI.Controllers
             var usuario = await _service.GetByIdAsync(id);
             if (usuario == null)
                 return NotFound();
+
+            // Eliminar la foto de perfil si existe
+            if (!string.IsNullOrEmpty(usuario.FotoPerfilURL))
+            {
+                try
+                {
+                    // Extraer el publicId de la URL de Cloudinary
+                    var uri = new Uri(usuario.FotoPerfilURL);
+                    var pathSegments = uri.PathAndQuery.Split('/');
+                    string fileName = pathSegments.Last().Split('.')[0];
+                    string publicId = $"usuarios/{fileName}";
+                    
+                    await _imageService.DeleteImageAsync(publicId);
+                }
+                catch (Exception ex)
+                {
+                    // Logear el error pero continuar con la eliminación del usuario
+                    Console.WriteLine($"Error al eliminar imagen al borrar usuario: {ex.Message}");
+                }
+            }
 
             await _service.DeleteAsync(id);
             return NoContent();

@@ -69,6 +69,10 @@ builder.Services.AddScoped<IComentarioService, ComentarioService>();
 builder.Services.AddScoped<IMedicionService, MedicionService>();
 builder.Services.AddScoped<IRutinaCompletadaService, RutinaCompletadaService>();
 builder.Services.AddScoped<ILogroService, LogroService>();
+// Añade estas líneas en Program.cs
+// Configurar Cloudinary Settings
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
+builder.Services.AddScoped<IImageService, CloudinaryImageService>();
 
 // Registrar servicio de roles
 builder.Services.AddScoped<IRolService, RolService>();
