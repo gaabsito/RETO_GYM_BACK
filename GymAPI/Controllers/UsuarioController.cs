@@ -4,14 +4,6 @@ using System.Security.Claims;
 using GymAPI.Models;
 using GymAPI.Services;
 using GymAPI.DTOs;
-using GymAPI.Utilities;
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using Microsoft.AspNetCore.Http;
-
 namespace GymAPI.Controllers
 {
     [Route("api/[controller]")]
@@ -19,12 +11,10 @@ namespace GymAPI.Controllers
     public class UsuarioController : ControllerBase
     {
         private readonly IUsuarioService _service;
-        private readonly IImageService _imageService;
 
-        public UsuarioController(IUsuarioService service, IImageService imageService)
+        public UsuarioController(IUsuarioService service)
         {
             _service = service;
-            _imageService = imageService;
         }
 
         [HttpGet]
@@ -38,8 +28,7 @@ namespace GymAPI.Controllers
                 Apellido = u.Apellido,
                 Email = u.Email,
                 FechaRegistro = u.FechaRegistro,
-                EstaActivo = u.EstaActivo,
-                FotoPerfilURL = u.FotoPerfilURL
+                EstaActivo = u.EstaActivo
             }).ToList();
 
             return Ok(usuariosDTO);
@@ -59,8 +48,7 @@ namespace GymAPI.Controllers
                 Apellido = usuario.Apellido,
                 Email = usuario.Email,
                 FechaRegistro = usuario.FechaRegistro,
-                EstaActivo = usuario.EstaActivo,
-                FotoPerfilURL = usuario.FotoPerfilURL
+                EstaActivo = usuario.EstaActivo
             };
 
             return Ok(usuarioDTO);
@@ -86,223 +74,73 @@ namespace GymAPI.Controllers
                 Apellido = usuario.Apellido,
                 Email = usuario.Email,
                 FechaRegistro = usuario.FechaRegistro,
-                EstaActivo = usuario.EstaActivo,
-                FotoPerfilURL = usuario.FotoPerfilURL
+                EstaActivo = usuario.EstaActivo
             });
         }
 
-        [Authorize]
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUsuario(int id, ProfileUpdateDTO usuarioDTO)
+[Authorize]
+[HttpPut("{id}")]
+public async Task<IActionResult> UpdateUsuario(int id, ProfileUpdateDTO usuarioDTO)
+{
+    // Verificar que el usuario solo pueda modificar su propio perfil
+    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (!int.TryParse(userIdClaim, out int userId) || userId != id)
+    {
+        return Forbid();
+    }
+
+    var existingUsuario = await _service.GetByIdAsync(id);
+    if (existingUsuario == null)
+        return NotFound();
+
+    // Si se está intentando cambiar la contraseña
+    if (!string.IsNullOrEmpty(usuarioDTO.CurrentPassword) && !string.IsNullOrEmpty(usuarioDTO.NewPassword))
+    {
+        // Verificar la contraseña actual
+        if (!BCrypt.Net.BCrypt.Verify(usuarioDTO.CurrentPassword, existingUsuario.Password))
         {
-            // Verificar que el usuario solo pueda modificar su propio perfil
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!int.TryParse(userIdClaim, out int userId) || userId != id)
-            {
-                return Forbid();
-            }
-
-            var existingUsuario = await _service.GetByIdAsync(id);
-            if (existingUsuario == null)
-                return NotFound();
-
-            // Si se está intentando cambiar la contraseña
-            if (!string.IsNullOrEmpty(usuarioDTO.CurrentPassword) && !string.IsNullOrEmpty(usuarioDTO.NewPassword))
-            {
-                // Verificar la contraseña actual
-                if (!BCrypt.Net.BCrypt.Verify(usuarioDTO.CurrentPassword, existingUsuario.Password))
-                {
-                    return BadRequest(new { message = "La contraseña actual es incorrecta" });
-                }
-
-                // Actualizar la contraseña
-                existingUsuario.Password = BCrypt.Net.BCrypt.HashPassword(usuarioDTO.NewPassword);
-            }
-
-            // Actualizar los demás campos si se proporcionaron
-            if (!string.IsNullOrWhiteSpace(usuarioDTO.Nombre))
-                existingUsuario.Nombre = usuarioDTO.Nombre.Trim();
-
-            if (!string.IsNullOrWhiteSpace(usuarioDTO.Apellido))
-                existingUsuario.Apellido = usuarioDTO.Apellido.Trim();
-
-            if (!string.IsNullOrWhiteSpace(usuarioDTO.Email))
-            {
-                // Verificar si el email ya existe para otro usuario
-                var existingUserWithEmail = await _service.GetByEmailAsync(usuarioDTO.Email.ToLower().Trim());
-                if (existingUserWithEmail != null && existingUserWithEmail.UsuarioID != id)
-                {
-                    return BadRequest(new { message = "El email ya está en uso por otro usuario" });
-                }
-                existingUsuario.Email = usuarioDTO.Email.ToLower().Trim();
-            }
-
-            // Asignar los campos nuevos si vienen en el DTO
-            if (usuarioDTO.Edad.HasValue)
-                existingUsuario.Edad = usuarioDTO.Edad.Value;
-
-            if (usuarioDTO.Altura.HasValue)
-                existingUsuario.Altura = usuarioDTO.Altura.Value;
-
-            if (usuarioDTO.Peso.HasValue)
-                existingUsuario.Peso = usuarioDTO.Peso.Value;
-
-            // Guardar cambios
-            await _service.UpdateAsync(existingUsuario);
-
-            return Ok(new { message = "Perfil actualizado correctamente" });
+            return BadRequest(new { message = "La contraseña actual es incorrecta" });
         }
 
-        [Authorize]
-        [HttpPost("{id}/foto")]
-        public async Task<ActionResult<ApiResponse<string>>> UpdateProfilePhoto(int id, IFormFile file)
+        // Actualizar la contraseña
+        existingUsuario.Password = BCrypt.Net.BCrypt.HashPassword(usuarioDTO.NewPassword);
+    }
+
+    // Actualizar los demás campos si se proporcionaron
+    if (!string.IsNullOrWhiteSpace(usuarioDTO.Nombre))
+        existingUsuario.Nombre = usuarioDTO.Nombre.Trim();
+
+    if (!string.IsNullOrWhiteSpace(usuarioDTO.Apellido))
+        existingUsuario.Apellido = usuarioDTO.Apellido.Trim();
+
+    if (!string.IsNullOrWhiteSpace(usuarioDTO.Email))
+    {
+        // Verificar si el email ya existe para otro usuario
+        var existingUserWithEmail = await _service.GetByEmailAsync(usuarioDTO.Email.ToLower().Trim());
+        if (existingUserWithEmail != null && existingUserWithEmail.UsuarioID != id)
         {
-            try
-            {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (!int.TryParse(userIdClaim, out int userId) || userId != id)
-                {
-                    return Forbid();
-                }
-
-                var user = await _service.GetByIdAsync(id);
-                if (user == null)
-                {
-                    return NotFound(new ApiResponse<string>
-                    {
-                        Success = false,
-                        Message = "Usuario no encontrado"
-                    });
-                }
-
-                // Validar el archivo
-                if (!FileValidationHelper.ValidateImageFile(file, out string errorMessage))
-                {
-                    return BadRequest(new ApiResponse<string>
-                    {
-                        Success = false,
-                        Message = errorMessage
-                    });
-                }
-
-                // Eliminar la foto anterior si existe
-                if (!string.IsNullOrEmpty(user.FotoPerfilURL))
-                {
-                    try
-                    {
-                        // Extraer el publicId de la URL de Cloudinary
-                        var uri = new Uri(user.FotoPerfilURL);
-                        var pathSegments = uri.PathAndQuery.Split('/');
-                        string fileName = pathSegments.Last().Split('.')[0]; // Obtener el nombre sin extensión
-                        
-                        // El publicId puede ser la ruta completa en Cloudinary (folder/filename)
-                        string publicId = $"usuarios/{fileName}";
-                        
-                        await _imageService.DeleteImageAsync(publicId);
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log el error pero continúa con la actualización
-                        Console.WriteLine($"Error al eliminar imagen anterior: {ex.Message}");
-                    }
-                }
-
-                // Subir nueva imagen a Cloudinary
-                string imageUrl = await _imageService.UploadImageAsync(file);
-
-                // Actualizar la URL de la foto de perfil en la base de datos
-                user.FotoPerfilURL = imageUrl;
-                await _service.UpdateAsync(user);
-
-                // Devolver la URL de la foto
-                return Ok(new ApiResponse<string>
-                {
-                    Success = true,
-                    Data = imageUrl,
-                    Message = "Foto de perfil actualizada correctamente"
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new ApiResponse<string>
-                {
-                    Success = false,
-                    Message = $"Error al actualizar la foto de perfil: {ex.Message}"
-                });
-            }
+            return BadRequest(new { message = "El email ya está en uso por otro usuario" });
         }
+        existingUsuario.Email = usuarioDTO.Email.ToLower().Trim();
+    }
 
-        [Authorize]
-        [HttpDelete("{id}/foto")]
-        public async Task<ActionResult<ApiResponse<bool>>> RemoveProfilePhoto(int id)
-        {
-            try
-            {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (!int.TryParse(userIdClaim, out int userId) || userId != id)
-                {
-                    return Forbid();
-                }
+    // **Asignar los campos nuevos** si vienen en el DTO
+    if (usuarioDTO.Edad.HasValue)
+        existingUsuario.Edad = usuarioDTO.Edad.Value;
 
-                var user = await _service.GetByIdAsync(id);
-                if (user == null)
-                {
-                    return NotFound(new ApiResponse<bool>
-                    {
-                        Success = false,
-                        Message = "Usuario no encontrado"
-                    });
-                }
+    if (usuarioDTO.Altura.HasValue)
+        existingUsuario.Altura = usuarioDTO.Altura.Value;
 
-                // Si el usuario no tiene foto de perfil, no hacer nada
-                if (string.IsNullOrEmpty(user.FotoPerfilURL))
-                {
-                    return Ok(new ApiResponse<bool>
-                    {
-                        Success = true,
-                        Data = true,
-                        Message = "El usuario no tiene foto de perfil"
-                    });
-                }
+    if (usuarioDTO.Peso.HasValue)
+        existingUsuario.Peso = usuarioDTO.Peso.Value;
 
-                try
-                {
-                    // Extraer el publicId de la URL de Cloudinary
-                    var uri = new Uri(user.FotoPerfilURL);
-                    var pathSegments = uri.PathAndQuery.Split('/');
-                    string fileName = pathSegments.Last().Split('.')[0]; // Obtener el nombre sin extensión
-                    
-                    // El publicId puede ser la ruta completa en Cloudinary (folder/filename)
-                    string publicId = $"usuarios/{fileName}";
-                    
-                    await _imageService.DeleteImageAsync(publicId);
-                }
-                catch (Exception ex)
-                {
-                    // Log el error pero continúa con la actualización
-                    Console.WriteLine($"Error al eliminar imagen de Cloudinary: {ex.Message}");
-                }
+    // Guardar cambios
+    await _service.UpdateAsync(existingUsuario);
 
-                // Actualizar el usuario en la base de datos
-                user.FotoPerfilURL = null;
-                await _service.UpdateAsync(user);
+    return Ok(new { message = "Perfil actualizado correctamente" });
+}
 
-                return Ok(new ApiResponse<bool>
-                {
-                    Success = true,
-                    Data = true,
-                    Message = "Foto de perfil eliminada correctamente"
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new ApiResponse<bool>
-                {
-                    Success = false,
-                    Message = $"Error al eliminar la foto de perfil: {ex.Message}"
-                });
-            }
-        }
+
 
         [Authorize]
         [HttpGet("profile")]
@@ -349,8 +187,7 @@ namespace GymAPI.Controllers
                     Apellido = usuario.Apellido,
                     Email = usuario.Email,
                     FechaRegistro = usuario.FechaRegistro,
-                    EstaActivo = usuario.EstaActivo,
-                    FotoPerfilURL = usuario.FotoPerfilURL
+                    EstaActivo = usuario.EstaActivo
                 };
 
                 return Ok(new ApiResponse<UsuarioDTO>
@@ -377,26 +214,6 @@ namespace GymAPI.Controllers
             var usuario = await _service.GetByIdAsync(id);
             if (usuario == null)
                 return NotFound();
-
-            // Eliminar la foto de perfil si existe
-            if (!string.IsNullOrEmpty(usuario.FotoPerfilURL))
-            {
-                try
-                {
-                    // Extraer el publicId de la URL de Cloudinary
-                    var uri = new Uri(usuario.FotoPerfilURL);
-                    var pathSegments = uri.PathAndQuery.Split('/');
-                    string fileName = pathSegments.Last().Split('.')[0];
-                    string publicId = $"usuarios/{fileName}";
-                    
-                    await _imageService.DeleteImageAsync(publicId);
-                }
-                catch (Exception ex)
-                {
-                    // Logear el error pero continuar con la eliminación del usuario
-                    Console.WriteLine($"Error al eliminar imagen al borrar usuario: {ex.Message}");
-                }
-            }
 
             await _service.DeleteAsync(id);
             return NoContent();
