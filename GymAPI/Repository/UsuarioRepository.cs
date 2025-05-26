@@ -17,7 +17,7 @@ namespace GymAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = "SELECT UsuarioID, Nombre, Apellido, Email, FechaRegistro, EstaActivo FROM Usuarios";
+                string query = "SELECT UsuarioID, Nombre, Apellido, Email, FechaRegistro, EstaActivo, FotoPerfilURL FROM Usuarios";
                 using (var command = new SqlCommand(query, connection))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
@@ -31,7 +31,8 @@ namespace GymAPI.Repositories
                                 Apellido = reader.GetString(2),
                                 Email = reader.GetString(3),
                                 FechaRegistro = reader.GetDateTime(4),
-                                EstaActivo = reader.GetBoolean(5)
+                                EstaActivo = reader.GetBoolean(5),
+                                FotoPerfilURL = reader.IsDBNull(6) ? null : reader.GetString(6)
                             };
                             usuarios.Add(usuario);
                         }
@@ -48,7 +49,7 @@ namespace GymAPI.Repositories
             {
                 await connection.OpenAsync();
                 string query = @"SELECT UsuarioID, Nombre, Apellido, Email, Password, 
-                      FechaRegistro, EstaActivo FROM Usuarios WHERE UsuarioID = @Id";
+                      FechaRegistro, EstaActivo, Edad, Altura, Peso, FotoPerfilURL FROM Usuarios WHERE UsuarioID = @Id";
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Id", id);
@@ -64,7 +65,11 @@ namespace GymAPI.Repositories
                                 Email = reader.GetString(3),
                                 Password = reader.GetString(4),
                                 FechaRegistro = reader.GetDateTime(5),
-                                EstaActivo = reader.GetBoolean(6)
+                                EstaActivo = reader.GetBoolean(6),
+                                Edad = reader.IsDBNull(7) ? null : (int?)reader.GetInt32(7),
+                                Altura = reader.IsDBNull(8) ? null : (float?)reader.GetFloat(8),
+                                Peso = reader.IsDBNull(9) ? null : (float?)reader.GetFloat(9),
+                                FotoPerfilURL = reader.IsDBNull(10) ? null : reader.GetString(10)
                             };
                         }
                     }
@@ -80,7 +85,8 @@ namespace GymAPI.Repositories
             {
                 await connection.OpenAsync();
                 string query = @"SELECT UsuarioID, Nombre, Apellido, Email, Password, 
-                        FechaRegistro, EstaActivo, ResetPasswordToken, ResetPasswordExpires 
+                        FechaRegistro, EstaActivo, ResetPasswordToken, ResetPasswordExpires,
+                        Edad, Altura, Peso, FotoPerfilURL 
                         FROM Usuarios WHERE Email = @Email";
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -99,7 +105,11 @@ namespace GymAPI.Repositories
                                 FechaRegistro = reader.GetDateTime(5),
                                 EstaActivo = reader.GetBoolean(6),
                                 ResetPasswordToken = reader.IsDBNull(7) ? null : reader.GetString(7),
-                                ResetPasswordExpires = reader.IsDBNull(8) ? null : reader.GetDateTime(8)
+                                ResetPasswordExpires = reader.IsDBNull(8) ? null : reader.GetDateTime(8),
+                                Edad = reader.IsDBNull(9) ? null : (int?)reader.GetInt32(9),
+                                Altura = reader.IsDBNull(10) ? null : (float?)reader.GetFloat(10),
+                                Peso = reader.IsDBNull(11) ? null : (float?)reader.GetFloat(11),
+                                FotoPerfilURL = reader.IsDBNull(12) ? null : reader.GetString(12)
                             };
                         }
                     }
@@ -134,7 +144,7 @@ namespace GymAPI.Repositories
             {
                 await connection.OpenAsync();
                 string query = @"SELECT UsuarioID, Nombre, Apellido, Email, Password, 
-                        FechaRegistro, EstaActivo, ResetPasswordToken, ResetPasswordExpires 
+                        FechaRegistro, EstaActivo, ResetPasswordToken, ResetPasswordExpires, FotoPerfilURL 
                         FROM Usuarios WHERE ResetPasswordToken = @Token";
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -153,7 +163,8 @@ namespace GymAPI.Repositories
                                 FechaRegistro = reader.GetDateTime(5),
                                 EstaActivo = reader.GetBoolean(6),
                                 ResetPasswordToken = reader.IsDBNull(7) ? null : reader.GetString(7),
-                                ResetPasswordExpires = reader.IsDBNull(8) ? null : reader.GetDateTime(8)
+                                ResetPasswordExpires = reader.IsDBNull(8) ? null : reader.GetDateTime(8),
+                                FotoPerfilURL = reader.IsDBNull(9) ? null : reader.GetString(9)
                             };
                         }
                     }
@@ -167,8 +178,8 @@ namespace GymAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = @"INSERT INTO Usuarios (Nombre, Apellido, Email, Password, EstaActivo) 
-                        VALUES (@Nombre, @Apellido, @Email, @Password, @EstaActivo);
+                string query = @"INSERT INTO Usuarios (Nombre, Apellido, Email, Password, EstaActivo, FotoPerfilURL) 
+                        VALUES (@Nombre, @Apellido, @Email, @Password, @EstaActivo, @FotoPerfilURL);
                         SELECT SCOPE_IDENTITY();";
 
                 using (var command = new SqlCommand(query, connection))
@@ -178,6 +189,7 @@ namespace GymAPI.Repositories
                     command.Parameters.AddWithValue("@Email", usuario.Email);
                     command.Parameters.AddWithValue("@Password", usuario.Password);
                     command.Parameters.AddWithValue("@EstaActivo", usuario.EstaActivo);
+                    command.Parameters.AddWithValue("@FotoPerfilURL", (object?)usuario.FotoPerfilURL ?? DBNull.Value);
 
                     var result = await command.ExecuteScalarAsync();
                     usuario.UsuarioID = Convert.ToInt32(result);
@@ -185,13 +197,13 @@ namespace GymAPI.Repositories
                 }
             }
         }
+        
         public async Task UpdateAsync(Usuario usuario)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
 
-                // Agregar aquí las columnas que quieras actualizar (Edad, Altura, Peso)
                 string query = @"
             UPDATE Usuarios
             SET
@@ -202,7 +214,8 @@ namespace GymAPI.Repositories
                 EstaActivo = @EstaActivo,
                 Edad = @Edad,
                 Altura = @Altura,
-                Peso = @Peso
+                Peso = @Peso,
+                FotoPerfilURL = @FotoPerfilURL
             WHERE UsuarioID = @Id";
 
                 using (var command = new SqlCommand(query, connection))
@@ -219,6 +232,7 @@ namespace GymAPI.Repositories
                     command.Parameters.AddWithValue("@Edad", usuario.Edad ?? (object)DBNull.Value);
                     command.Parameters.AddWithValue("@Altura", usuario.Altura ?? (object)DBNull.Value);
                     command.Parameters.AddWithValue("@Peso", usuario.Peso ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@FotoPerfilURL", (object?)usuario.FotoPerfilURL ?? DBNull.Value);
 
                     await command.ExecuteNonQueryAsync();
                 }

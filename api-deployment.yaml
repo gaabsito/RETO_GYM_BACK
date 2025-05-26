@@ -13,7 +13,7 @@ data:
       },
       "AllowedHosts": "*",
       "ConnectionStrings": {
-        "GymappDB": "Server=database-1.cpsdxhssla7h.us-east-1.rds.amazonaws.com;Database=GymappDB;User Id=SA;Password=YourStrongPassw0rd;TrustServerCertificate=True;"
+        "GymappDB": "Server=localhost;Database=GymappDB;User Id=SA;Password=YourStrongPassw0rd;TrustServerCertificate=True;"
       },
       "JwtSettings": {
         "SecretKey": "zxT3u9n6f8p1m4k7LQJHGFDSAWERTY_secureKey_2024",

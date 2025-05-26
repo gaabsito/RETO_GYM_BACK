@@ -80,3 +80,33 @@ INSERT INTO Ejercicios (Nombre, Descripcion, GrupoMuscular, ImagenURL, VideoURL,
 ('Crunch Oblicuo', 'Ejercicio para oblicuos y core rotacional.', 'Abdominales', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Oblique-Crunch_253d0361-395d-443b-8228-aff440c1eee9_600x600.png?v=1612138354', 'https://www.youtube.com/watch?v=KzEakx0Oja8&list=PLyqKj7LwU2RvTgEW_QlCCjtIL5d_KP_-I&index=13', 0),
 ('Elevación de Piernas', 'Ejercicio para abdominales inferiores.', 'Abdominales', 'https://cdn.shopify.com/s/files/1/0269/5551/3900/files/Hanging-Leg-Raise_36986393-d0a6-494a-981f-4ea06a99b0b5_600x600.png?v=1612138457', 'https://www.youtube.com/watch?v=7FwGZ8qY5OU&list=PLyqKj7LwU2RvTgEW_QlCCjtIL5d_KP_-I&index=2', 0);
 GO
+INSERT INTO Logros (Nombre, Descripcion, Icono, Color, Experiencia, Categoria, CondicionLogro, ValorMeta, Secreto)
+VALUES 
+-- Logros de Entrenamientos Totales
+('Primeros Pasos', 'Completa tu primer entrenamiento', 'mdi-shoe-print', '#9E9E9E', 10, 'Entrenamiento', 'TOTAL_ENTRENAMIENTOS', 1, 0),
+('Principiante', 'Completa 5 entrenamientos', 'mdi-run', '#8BC34A', 20, 'Entrenamiento', 'TOTAL_ENTRENAMIENTOS', 5, 0),
+('Habitual', 'Completa 20 entrenamientos', 'mdi-dumbbell', '#4CAF50', 50, 'Entrenamiento', 'TOTAL_ENTRENAMIENTOS', 20, 0),
+('Dedicado', 'Completa 50 entrenamientos', 'mdi-arm-flex', '#2196F3', 100, 'Entrenamiento', 'TOTAL_ENTRENAMIENTOS', 50, 0),
+('Atleta', 'Completa 100 entrenamientos', 'mdi-medal', '#FF9800', 200, 'Entrenamiento', 'TOTAL_ENTRENAMIENTOS', 100, 0),
+('Imparable', 'Completa 250 entrenamientos', 'mdi-trophy', '#F44336', 500, 'Entrenamiento', 'TOTAL_ENTRENAMIENTOS', 250, 0),
+('Leyenda', 'Completa 500 entrenamientos', 'mdi-crown', '#E91E63', 1000, 'Entrenamiento', 'TOTAL_ENTRENAMIENTOS', 500, 0),
+
+-- Logros de Racha (Días Consecutivos)
+('Consistente', 'Entrena 3 días consecutivos', 'mdi-calendar-check', '#8BC34A', 30, 'Racha', 'DIAS_CONSECUTIVOS', 3, 0),
+('Persistente', 'Entrena 7 días consecutivos', 'mdi-calendar-week', '#4CAF50', 50, 'Racha', 'DIAS_CONSECUTIVOS', 7, 0),
+('Máquina', 'Entrena 14 días consecutivos', 'mdi-robot', '#2196F3', 100, 'Racha', 'DIAS_CONSECUTIVOS', 14, 0),
+('Sobrehumano', 'Entrena 30 días consecutivos', 'mdi-super-hero', '#F44336', 300, 'Racha', 'DIAS_CONSECUTIVOS', 30, 0),
+
+-- Logros de Dificultad
+('Desafío Aceptado', 'Completa un entrenamiento difícil', 'mdi-fire', '#FF9800', 30, 'Dificultad', 'ENTRENAMIENTOS_DIFICILES', 1, 0),
+('Sin Límites', 'Completa 10 entrenamientos difíciles', 'mdi-flash', '#F44336', 100, 'Dificultad', 'ENTRENAMIENTOS_DIFICILES', 10, 0),
+
+-- Logros de Rol
+('Ascenso', 'Alcanza el nivel Constante', 'mdi-arrow-up-bold', '#8BC34A', 30, 'Rol', 'NIVEL_ROL', 2, 0),
+('Compromiso', 'Alcanza el nivel Comprometido', 'mdi-handshake', '#4CAF50', 50, 'Rol', 'NIVEL_ROL', 3, 0),
+('Élite', 'Alcanza el nivel Élite', 'mdi-star', '#E91E63', 200, 'Rol', 'NIVEL_ROL', 7, 0),
+
+-- Logros Secretos (más difíciles de conseguir)
+('Entrenador Nocturno', 'Completa 5 entrenamientos después de las 10 PM', 'mdi-weather-night', '#673AB7', 50, 'Secreto', 'ENTRENAMIENTOS_NOCTURNOS', 5, 1),
+('Madrugador', 'Completa 5 entrenamientos antes de las 7 AM', 'mdi-weather-sunset-up', '#FF5722', 50, 'Secreto', 'ENTRENAMIENTOS_MADRUGADA', 5, 1),
+('Domingo de Entrenamiento', 'Entrena 5 domingos consecutivos', 'mdi-calendar-weekend', '#9C27B0', 100, 'Secreto', 'DOMINGOS_CONSECUTIVOS', 5, 1);

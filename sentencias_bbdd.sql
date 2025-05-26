@@ -14,6 +14,7 @@ CREATE TABLE Usuarios (
     Password VARCHAR(255) NOT NULL,
     FechaRegistro DATETIME DEFAULT GETDATE(),
     EstaActivo BIT DEFAULT 1,
+    FotoPerfilURL NVARCHAR(255) NULL,
     Peso FLOAT NULL,
     Altura FLOAT NULL,
     Genero VARCHAR(20) NULL,
@@ -81,7 +82,102 @@ CREATE TABLE Comentarios (
 );
 GO
 
+-- 1. Agregar campos de objetivos a la tabla Usuarios existente
+ALTER TABLE Usuarios
+ADD ObjetivoPeso FLOAT NULL,
+    ObjetivoIMC FLOAT NULL,
+    ObjetivoPorcentajeGrasa FLOAT NULL;
+
+-- 2. Crear tabla para almacenar mediciones corporales
+CREATE TABLE Mediciones (
+    MedicionID INT IDENTITY(1,1) PRIMARY KEY,
+    UsuarioID INT NOT NULL REFERENCES Usuarios(UsuarioID) ON DELETE CASCADE,
+    Fecha DATETIME NOT NULL DEFAULT GETDATE(),
+    Peso FLOAT NULL,
+    Altura FLOAT NULL,
+    IMC FLOAT NULL,
+    PorcentajeGrasa FLOAT NULL,
+    CircunferenciaBrazo FLOAT NULL,
+    CircunferenciaPecho FLOAT NULL,
+    CircunferenciaCintura FLOAT NULL,
+    CircunferenciaMuslo FLOAT NULL,
+    Notas VARCHAR(500) NULL
+);
+
+-- 3. Agregar índice para búsqueda rápida por usuario
+CREATE INDEX IDX_Mediciones_Usuario ON Mediciones(UsuarioID);
+
+-- 4. Crear vista para obtener datos resumidos por mes (para gráficas)
+CREATE VIEW MedicionesMensuales AS
+SELECT 
+    UsuarioID,
+    YEAR(Fecha) AS Anio,
+    MONTH(Fecha) AS Mes,
+    AVG(Peso) AS PesoPromedio,
+    AVG(IMC) AS IMCPromedio,
+    AVG(PorcentajeGrasa) AS GrasaPromedio,
+    AVG(CircunferenciaCintura) AS CinturaPromedio
+FROM Mediciones
+GROUP BY UsuarioID, YEAR(Fecha), MONTH(Fecha);
+
+-- Tabla para almacenar las rutinas completadas por los usuarios
+CREATE TABLE RutinasCompletadas (
+    RutinaCompletadaID INT IDENTITY(1,1) PRIMARY KEY,
+    UsuarioID INT NOT NULL REFERENCES Usuarios(UsuarioID) ON DELETE CASCADE,
+    EntrenamientoID INT NOT NULL REFERENCES Entrenamientos(EntrenamientoID) ON DELETE CASCADE,
+    FechaCompletada DATETIME NOT NULL DEFAULT GETDATE(),
+    Notas VARCHAR(500) NULL,
+    DuracionMinutos INT NULL,
+    CaloriasEstimadas INT NULL,
+    NivelEsfuerzoPercibido INT NULL
+);
+
+-- Tabla de Logros
+CREATE TABLE Logros (
+    LogroID INT IDENTITY(1,1) PRIMARY KEY,
+    Nombre NVARCHAR(100) NOT NULL,
+    Descripcion NVARCHAR(255) NOT NULL,
+    Icono NVARCHAR(50) NOT NULL,
+    Color NVARCHAR(20) NOT NULL,
+    Experiencia INT NOT NULL DEFAULT 10,
+    Categoria NVARCHAR(50) NOT NULL,
+    CondicionLogro NVARCHAR(50) NOT NULL,
+    ValorMeta INT NOT NULL,
+    Secreto BIT NOT NULL DEFAULT 0
+);
+
+-- Tabla de relación Usuario-Logro
+CREATE TABLE UsuarioLogros (
+    UsuarioLogroID INT IDENTITY(1,1) PRIMARY KEY,
+    UsuarioID INT NOT NULL,
+    LogroID INT NOT NULL,
+    FechaDesbloqueo DATETIME NULL,
+    ProgresoActual INT NOT NULL DEFAULT 0,
+    Desbloqueado BIT NOT NULL DEFAULT 0,
+    CONSTRAINT FK_UsuarioLogros_Usuarios FOREIGN KEY (UsuarioID) REFERENCES Usuarios(UsuarioID),
+    CONSTRAINT FK_UsuarioLogros_Logros FOREIGN KEY (LogroID) REFERENCES Logros(LogroID),
+    CONSTRAINT UQ_UsuarioLogros UNIQUE (UsuarioID, LogroID)
+);
+
 -- Índices para mejorar el rendimiento
+CREATE INDEX IDX_RutinasCompletadas_Usuario ON RutinasCompletadas(UsuarioID);
+CREATE INDEX IDX_RutinasCompletadas_Entrenamiento ON RutinasCompletadas(EntrenamientoID);
+CREATE INDEX IDX_RutinasCompletadas_Fecha ON RutinasCompletadas(FechaCompletada);
+
+-- Vista para obtener datos resumidos para estadísticas
+CREATE VIEW ResumenRutinasCompletadas AS
+SELECT 
+    UsuarioID,
+    COUNT(*) AS TotalRutinas,
+    SUM(CASE WHEN FechaCompletada >= DATEADD(day, -7, GETDATE()) THEN 1 ELSE 0 END) AS RutinasUltimaSemana,
+    SUM(CASE WHEN FechaCompletada >= DATEADD(day, -30, GETDATE()) THEN 1 ELSE 0 END) AS RutinasUltimoMes,
+    AVG(CAST(NivelEsfuerzoPercibido AS FLOAT)) AS PromedioEsfuerzo,
+    SUM(CaloriasEstimadas) AS CaloriasTotales,
+    SUM(DuracionMinutos) AS MinutosTotales
+FROM RutinasCompletadas
+GROUP BY UsuarioID;
+
+-- Índices para mejorar el rendimiento (solo una vez)
 CREATE INDEX IDX_Entrenamientos_Autor ON Entrenamientos(AutorID);
 CREATE INDEX IDX_Comentarios_Entrenamiento ON Comentarios(EntrenamientoID);
 CREATE INDEX IDX_EntrenamientoEjercicios_Entrenamiento ON EntrenamientoEjercicios(EntrenamientoID);
