@@ -1,32 +1,19 @@
-# Etapa de compilación
-FROM node:18-alpine AS build
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
-
-# Copiar archivos de configuración del proyecto
-COPY GymFRONT/vue-gym/package*.json ./
-
-# Instalar dependencias
-RUN npm install
-
-# Instalar chart.js específicamente (necesario para MedicionView.vue)
-RUN npm install chart.js
-
-# Copiar los archivos del proyecto
-COPY GymFRONT/vue-gym/ .
-
-# Construir la aplicación para producción, saltando la comprobación de tipos
-# Modificamos el script para saltarnos la verificación de tipos que está fallando
-RUN NODE_OPTIONS=--max_old_space_size=4096 npm run build-only
-
-# Etapa de producción
-FROM nginx:alpine AS production
-WORKDIR /usr/share/nginx/html
-
-# Copiar la aplicación compilada desde la etapa de compilación
-COPY --from=build /app/dist .
-
-# Exponer puerto 80
 EXPOSE 80
 
-# Comando para iniciar Nginx en primer plano
-CMD ["nginx", "-g", "daemon off;"]
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY ["GymAPI/GymAPI.csproj", "GymAPI/"]
+RUN dotnet restore "GymAPI/GymAPI.csproj"
+COPY . .
+WORKDIR "/src/GymAPI"
+RUN dotnet build "GymAPI.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "GymAPI.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "GymAPI.dll"]
