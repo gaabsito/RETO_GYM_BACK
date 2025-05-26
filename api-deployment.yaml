@@ -13,7 +13,7 @@ data:
       },
       "AllowedHosts": "*",
       "ConnectionStrings": {
-        "GymappDB": "Server=database-1.cpsdxhssla7h.us-east-1.rds.amazonaws.com;Database=GymappDB;User Id=SA;Password=YourStrongPassw0rd;TrustServerCertificate=True;"
+        "GymappDB": "Server=database-1.castcy5syqfx.us-east-1.rds.amazonaws.com;Database=GymappDB;User Id=SA;Password=YourStrongPassw0rd;TrustServerCertificate=True;"
       },
       "JwtSettings": {
         "SecretKey": "zxT3u9n6f8p1m4k7LQJHGFDSAWERTY_secureKey_2024",
@@ -54,7 +54,7 @@ spec:
     spec:
       containers:
       - name: gymapi
-        image: jaimeescartinsv/sanvalero:gymapi
+        image: gaabsito/tfg:gymapi
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
