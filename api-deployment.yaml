@@ -33,7 +33,7 @@ data:
           "ClientSecret": "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"
         }
       },
-      "FrontendUrl": "http://frontend-service"
+      "FrontendUrl": "http://a3af4d776f8f147a2b131943bac4ff4c-810577354.us-east-1.elb.amazonaws.com"
     }
 ---
 apiVersion: apps/v1
