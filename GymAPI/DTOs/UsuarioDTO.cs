@@ -8,6 +8,15 @@ namespace GymAPI.DTOs
         public string Email { get; set; } = "";
         public DateTime FechaRegistro { get; set; }
         public bool EstaActivo { get; set; }
-        public string? FotoPerfilURL { get; set; } // Nueva propiedad para URL de foto
+        public string? FotoPerfilURL { get; set; }
+        public bool EsAdmin { get; set; } = false; // NUEVO
+    }
+
+    public class AdminUsuarioDTO : UsuarioDTO
+    {
+        public int? Edad { get; set; }
+        public float? Peso { get; set; }
+        public float? Altura { get; set; }
+        public DateTime? UltimaActividad { get; set; }
     }
 }

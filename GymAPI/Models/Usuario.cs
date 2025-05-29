@@ -13,7 +13,10 @@ namespace GymAPI.Models
         public float? Altura { get; set; } // Nullable
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
         public bool EstaActivo { get; set; } = true;
-        public string? FotoPerfilURL { get; set; } // Nueva propiedad para URL de foto
+        public string? FotoPerfilURL { get; set; }
+
+        // NUEVO: Campo para identificar administradores
+        public bool EsAdmin { get; set; } = false;
 
         public string? ResetPasswordToken { get; set; }
         public DateTime? ResetPasswordExpires { get; set; }

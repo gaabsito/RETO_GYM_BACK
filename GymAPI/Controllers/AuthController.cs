@@ -1,15 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using GymAPI.Models;
 using GymAPI.Services;
 using GymAPI.DTOs;
-using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.Extensions.Options;
 using GymAPI.Settings;
-using Microsoft.AspNetCore.Authorization;
-using Google.Apis.Auth;
+using Microsoft.Extensions.Options;
 
 namespace GymAPI.Controllers
 {
@@ -17,191 +15,161 @@ namespace GymAPI.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly IUsuarioService _userService;
+        private readonly IUsuarioService _usuarioService;
         private readonly JwtSettings _jwtSettings;
-        private readonly GoogleAuthSettings _googleAuthSettings;
-        private readonly IEmailService _emailService;
 
-        public AuthController(IUsuarioService userService, IOptions<JwtSettings> jwtSettings, IOptions<GoogleAuthSettings> googleAuthSettings, IEmailService emailService)
+        public AuthController(IUsuarioService usuarioService, IOptions<JwtSettings> jwtSettings)
         {
-            _userService = userService;
+            _usuarioService = usuarioService;
             _jwtSettings = jwtSettings.Value;
-            _googleAuthSettings = googleAuthSettings.Value;
-            _emailService = emailService;
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<AuthResponseDTO>> Register(RegisterDTO registerDto)
+        public async Task<ActionResult<AuthResponseDTO>> Register(RegisterDTO registerDTO)
         {
             try
             {
-                // Verificar si el email ya existe
-                var existingUsers = await _userService.GetAllAsync();
-                if (existingUsers.Any(u => u.Email.ToLower() == registerDto.Email.ToLower()))
+                // Verificar si el usuario ya existe
+                var existingUser = await _usuarioService.GetByEmailAsync(registerDTO.Email);
+                if (existingUser != null)
                 {
-                    return BadRequest(new { message = "El email ya está registrado" });
+                    return BadRequest(new { message = "Ya existe un usuario con este email" });
                 }
 
                 // Crear nuevo usuario
                 var usuario = new Usuario
                 {
-                    Nombre = registerDto.Nombre.Trim(),
-                    Apellido = registerDto.Apellido.Trim(),
-                    Email = registerDto.Email.ToLower().Trim(),
-                    Password = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
-                    FechaRegistro = DateTime.UtcNow,
-                    EstaActivo = true
+                    Nombre = registerDTO.Nombre,
+                    Apellido = registerDTO.Apellido,
+                    Email = registerDTO.Email,
+                    Password = BCrypt.Net.BCrypt.HashPassword(registerDTO.Password),
+                    EsAdmin = false // Los registros normales no son admin
                 };
 
-                // Añadir usuario y obtener el ID
-                var userId = await _userService.AddAsync(usuario);
-                usuario.UsuarioID = userId;
+                await _usuarioService.AddAsync(usuario);
 
-                // Generar token
+                // Generar token JWT
                 var token = GenerateJwtToken(usuario);
 
-                // Crear DTO de respuesta
-                var userDto = new UsuarioDTO
+                var usuarioDTO = new UsuarioDTO
                 {
                     UsuarioID = usuario.UsuarioID,
                     Nombre = usuario.Nombre,
                     Apellido = usuario.Apellido,
                     Email = usuario.Email,
                     FechaRegistro = usuario.FechaRegistro,
-                    EstaActivo = usuario.EstaActivo
+                    EstaActivo = usuario.EstaActivo,
+                    FotoPerfilURL = usuario.FotoPerfilURL,
+                    EsAdmin = usuario.EsAdmin
                 };
 
                 return Ok(new AuthResponseDTO
                 {
-                    User = userDto,
-                    Token = token
+                    User = usuarioDTO,
+                    Token = token,
+                    EsAdministrador = usuario.EsAdmin
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error interno del servidor al registrar usuario" });
+                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
             }
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<AuthResponseDTO>> Login(LoginDTO loginDto)
+        public async Task<ActionResult<AuthResponseDTO>> Login(LoginDTO loginDTO)
         {
             try
             {
-                // Buscar usuario por email directamente
-                var user = await _userService.GetByEmailAsync(loginDto.Email.ToLower());
-
-                // Verificar si el usuario existe
-                if (user == null)
+                // Buscar usuario por email
+                var usuario = await _usuarioService.GetByEmailAsync(loginDTO.Email);
+                if (usuario == null)
                 {
-                    return BadRequest(new { message = "Email o contraseña incorrectos" });
+                    return BadRequest(new { message = "Credenciales inválidas" });
+                }
+
+                // Verificar contraseña
+                if (!BCrypt.Net.BCrypt.Verify(loginDTO.Password, usuario.Password))
+                {
+                    return BadRequest(new { message = "Credenciales inválidas" });
                 }
 
                 // Verificar si el usuario está activo
-                if (!user.EstaActivo)
+                if (!usuario.EstaActivo)
                 {
-                    return BadRequest(new { message = "La cuenta está desactivada" });
+                    return BadRequest(new { message = "Cuenta desactivada" });
                 }
 
-                // Verificar la contraseña
-                if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, user.Password))
-                {
-                    return BadRequest(new { message = "Email o contraseña incorrectos" });
-                }
+                // Generar token JWT
+                var token = GenerateJwtToken(usuario);
 
-                // Generar token
-                var token = GenerateJwtToken(user);
-
-                // Crear DTO de respuesta
-                var userDto = new UsuarioDTO
+                var usuarioDTO = new UsuarioDTO
                 {
-                    UsuarioID = user.UsuarioID,
-                    Nombre = user.Nombre,
-                    Apellido = user.Apellido,
-                    Email = user.Email,
-                    FechaRegistro = user.FechaRegistro,
-                    EstaActivo = user.EstaActivo
+                    UsuarioID = usuario.UsuarioID,
+                    Nombre = usuario.Nombre,
+                    Apellido = usuario.Apellido,
+                    Email = usuario.Email,
+                    FechaRegistro = usuario.FechaRegistro,
+                    EstaActivo = usuario.EstaActivo,
+                    FotoPerfilURL = usuario.FotoPerfilURL,
+                    EsAdmin = usuario.EsAdmin
                 };
 
                 return Ok(new AuthResponseDTO
                 {
-                    User = userDto,
-                    Token = token
+                    User = usuarioDTO,
+                    Token = token,
+                    EsAdministrador = usuario.EsAdmin
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error interno del servidor al iniciar sesión" });
+                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
             }
         }
 
-        [HttpPost("request-reset")]
-        public async Task<IActionResult> RequestPasswordReset(RequestPasswordResetDTO resetDto)
+        private string GenerateJwtToken(Usuario usuario)
         {
-            try
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_jwtSettings.SecretKey);
+
+            var claims = new List<Claim>
             {
-                var user = await _userService.GetByEmailAsync(resetDto.Email.ToLower());
-                if (user == null)
-                {
-                    return Ok(new { message = "Si el email existe, recibirás instrucciones para recuperar tu contraseña" });
-                }
+                new Claim(ClaimTypes.NameIdentifier, usuario.UsuarioID.ToString()),
+                new Claim(ClaimTypes.Email, usuario.Email),
+                new Claim(ClaimTypes.Name, $"{usuario.Nombre} {usuario.Apellido}")
+            };
 
-                var token = Convert.ToBase64String(Guid.NewGuid().ToByteArray())
-                    .Replace("/", "_")
-                    .Replace("+", "-");
-                var expires = DateTime.UtcNow.AddHours(1);
-
-                await _userService.UpdateResetTokenAsync(user.UsuarioID, token, expires);
-
-                // Enviar email
-                await _emailService.SendPasswordResetEmailAsync(
-                    user.Email,
-                    $"{user.Nombre} {user.Apellido}",
-                    token
-                );
-
-                return Ok(new { message = "Se han enviado las instrucciones a tu correo electrónico" });
-            }
-            catch (Exception ex)
+            // IMPORTANTE: Agregar claim de administrador
+            if (usuario.EsAdmin)
             {
-                return StatusCode(500, new { message = "Error al procesar la solicitud" });
+                claims.Add(new Claim(ClaimTypes.Role, "Administrator"));
+                claims.Add(new Claim("IsAdmin", "true"));
             }
+            else
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "User"));
+                claims.Add(new Claim("IsAdmin", "false"));
+            }
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
 
-        [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword(ResetPasswordDTO resetDto)
-        {
-            try
-            {
-                var user = await _userService.GetByResetTokenAsync(resetDto.Token);
-                if (user == null || user.ResetPasswordExpires < DateTime.UtcNow)
-                {
-                    return BadRequest(new { message = "Token inválido o expirado" });
-                }
-
-                // Actualizar contraseña
-                user.Password = BCrypt.Net.BCrypt.HashPassword(resetDto.Password);
-                user.ResetPasswordToken = null;
-                user.ResetPasswordExpires = null;
-
-                await _userService.UpdateAsync(user);
-
-                return Ok(new { message = "Contraseña actualizada correctamente" });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error al restablecer la contraseña" });
-            }
-        }
-
-        [Authorize]
-        [HttpGet("verify")]
+        [HttpPost("verify")]
         public async Task<ActionResult<ApiResponse<UsuarioDTO>>> VerifyToken()
         {
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out int id))
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userIdClaim, out int userId))
                 {
                     return Unauthorized(new ApiResponse<UsuarioDTO>
                     {
@@ -210,39 +178,32 @@ namespace GymAPI.Controllers
                     });
                 }
 
-                var user = await _userService.GetByIdAsync(id);
-                if (user == null)
+                var usuario = await _usuarioService.GetByIdAsync(userId);
+                if (usuario == null || !usuario.EstaActivo)
                 {
                     return Unauthorized(new ApiResponse<UsuarioDTO>
                     {
                         Success = false,
-                        Message = "Usuario no encontrado"
+                        Message = "Usuario no encontrado o inactivo"
                     });
                 }
 
-                if (!user.EstaActivo)
+                var usuarioDTO = new UsuarioDTO
                 {
-                    return Unauthorized(new ApiResponse<UsuarioDTO>
-                    {
-                        Success = false,
-                        Message = "La cuenta está desactivada"
-                    });
-                }
-
-                var userDto = new UsuarioDTO
-                {
-                    UsuarioID = user.UsuarioID,
-                    Nombre = user.Nombre,
-                    Apellido = user.Apellido,
-                    Email = user.Email,
-                    FechaRegistro = user.FechaRegistro,
-                    EstaActivo = user.EstaActivo
+                    UsuarioID = usuario.UsuarioID,
+                    Nombre = usuario.Nombre,
+                    Apellido = usuario.Apellido,
+                    Email = usuario.Email,
+                    FechaRegistro = usuario.FechaRegistro,
+                    EstaActivo = usuario.EstaActivo,
+                    FotoPerfilURL = usuario.FotoPerfilURL,
+                    EsAdmin = usuario.EsAdmin
                 };
 
                 return Ok(new ApiResponse<UsuarioDTO>
                 {
                     Success = true,
-                    Data = userDto
+                    Data = usuarioDTO
                 });
             }
             catch (Exception ex)
@@ -250,92 +211,9 @@ namespace GymAPI.Controllers
                 return StatusCode(500, new ApiResponse<UsuarioDTO>
                 {
                     Success = false,
-                    Message = "Error interno del servidor al verificar token"
+                    Message = "Error interno del servidor"
                 });
             }
-        }
-
-        [HttpPost("google")]
-        public async Task<ActionResult<AuthResponseDTO>> GoogleLogin([FromBody] GoogleAuthDTO googleAuthDto)
-        {
-            try
-            {
-                var settings = new GoogleJsonWebSignature.ValidationSettings
-                {
-                    Audience = new[] { _googleAuthSettings.ClientId }
-                };
-
-                var payload = await GoogleJsonWebSignature.ValidateAsync(googleAuthDto.IdToken, settings);
-
-                // Buscar si el usuario ya existe
-                var existingUser = await _userService.GetByEmailAsync(payload.Email);
-
-                if (existingUser == null)
-                {
-                    // Crear nuevo usuario
-                    var newUser = new Usuario
-                    {
-                        Email = payload.Email,
-                        Nombre = payload.GivenName ?? payload.Name.Split(' ')[0],
-                        Apellido = payload.FamilyName ?? (payload.Name.Split(' ').Length > 1 ? payload.Name.Split(' ')[1] : ""),
-                        Password = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()), // Contraseña aleatoria
-                        FechaRegistro = DateTime.UtcNow,
-                        EstaActivo = true
-                    };
-
-                    await _userService.AddAsync(newUser);
-                    existingUser = newUser;
-                }
-
-                // Generar JWT token
-                var token = GenerateJwtToken(existingUser);
-
-                var userDto = new UsuarioDTO
-                {
-                    UsuarioID = existingUser.UsuarioID,
-                    Nombre = existingUser.Nombre,
-                    Apellido = existingUser.Apellido,
-                    Email = existingUser.Email,
-                    FechaRegistro = existingUser.FechaRegistro,
-                    EstaActivo = existingUser.EstaActivo
-                };
-
-                return Ok(new AuthResponseDTO
-                {
-                    User = userDto,
-                    Token = token
-                });
-            }
-            catch (InvalidJwtException)
-            {
-                return BadRequest(new { message = "Token de Google inválido" });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error al procesar el login con Google" });
-            }
-        }
-
-        private string GenerateJwtToken(Usuario user)
-        {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
-            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.UsuarioID.ToString()),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.GivenName, user.Nombre),
-                new Claim(ClaimTypes.Surname, user.Apellido)
-            };
-
-            var token = new JwtSecurityToken(
-                claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes),
-                signingCredentials: credentials
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }
