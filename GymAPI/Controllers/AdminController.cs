@@ -1,3 +1,6 @@
+// ===========================================
+// 4. GymAPI/Controllers/AdminController.cs
+// ===========================================
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
@@ -10,21 +13,24 @@ namespace GymAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Requiere autenticación
+    [Authorize]
     public class AdminController : ControllerBase
     {
         private readonly IUsuarioService _usuarioService;
         private readonly IEjercicioRepository _ejercicioRepository;
         private readonly IEntrenamientoRepository _entrenamientoRepository;
+        private readonly ILogger<AdminController> _logger;
 
         public AdminController(
             IUsuarioService usuarioService,
             IEjercicioRepository ejercicioRepository,
-            IEntrenamientoRepository entrenamientoRepository)
+            IEntrenamientoRepository entrenamientoRepository,
+            ILogger<AdminController> logger)
         {
             _usuarioService = usuarioService;
             _ejercicioRepository = ejercicioRepository;
             _entrenamientoRepository = entrenamientoRepository;
+            _logger = logger;
         }
 
         // Verificar si el usuario actual es administrador
@@ -72,6 +78,7 @@ namespace GymAPI.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al obtener usuarios");
                 return StatusCode(500, new ApiResponse<List<AdminUsuarioDTO>>
                 {
                     Success = false,
@@ -88,16 +95,7 @@ namespace GymAPI.Controllers
 
             try
             {
-                // Verificar si el email ya existe
-                var existingUser = await _usuarioService.GetByEmailAsync(userDTO.Email);
-                if (existingUser != null)
-                {
-                    return BadRequest(new ApiResponse<UsuarioDTO>
-                    {
-                        Success = false,
-                        Message = "Ya existe un usuario con este email"
-                    });
-                }
+                _logger.LogInformation("🔥 Creando usuario: {Email}", userDTO.Email);
 
                 var usuario = new Usuario
                 {
@@ -122,6 +120,8 @@ namespace GymAPI.Controllers
                     EsAdmin = usuario.EsAdmin
                 };
 
+                _logger.LogInformation("✅ Usuario creado exitosamente: {UsuarioID}", usuario.UsuarioID);
+
                 return Ok(new ApiResponse<UsuarioDTO>
                 {
                     Success = true,
@@ -129,8 +129,18 @@ namespace GymAPI.Controllers
                     Message = "Usuario creado correctamente"
                 });
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning("❌ Error de validación al crear usuario: {Message}", ex.Message);
+                return BadRequest(new ApiResponse<UsuarioDTO>
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
+            }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "❌ Error inesperado al crear usuario");
                 return StatusCode(500, new ApiResponse<UsuarioDTO>
                 {
                     Success = false,
@@ -147,6 +157,8 @@ namespace GymAPI.Controllers
 
             try
             {
+                _logger.LogInformation("🔥 Actualizando usuario ID: {UsuarioID}", id);
+
                 var usuario = await _usuarioService.GetByIdAsync(id);
                 if (usuario == null)
                 {
@@ -170,6 +182,8 @@ namespace GymAPI.Controllers
 
                 await _usuarioService.UpdateAsync(usuario);
 
+                _logger.LogInformation("✅ Usuario actualizado exitosamente: {UsuarioID}", id);
+
                 return Ok(new ApiResponse<bool>
                 {
                     Success = true,
@@ -177,8 +191,18 @@ namespace GymAPI.Controllers
                     Message = "Usuario actualizado correctamente"
                 });
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning("❌ Error de validación al actualizar usuario {UsuarioID}: {Message}", id, ex.Message);
+                return BadRequest(new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
+            }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "❌ Error inesperado al actualizar usuario {UsuarioID}", id);
                 return StatusCode(500, new ApiResponse<bool>
                 {
                     Success = false,
@@ -195,9 +219,13 @@ namespace GymAPI.Controllers
 
             try
             {
+                _logger.LogInformation("🔥 INICIANDO eliminación de usuario ID: {UsuarioID}", id);
+
+                // Verificar que no se está eliminando a sí mismo
                 var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (int.TryParse(userIdClaim, out int currentUserId) && currentUserId == id)
                 {
+                    _logger.LogWarning("❌ Usuario {CurrentUserId} intentó eliminarse a sí mismo", currentUserId);
                     return BadRequest(new ApiResponse<bool>
                     {
                         Success = false,
@@ -205,7 +233,10 @@ namespace GymAPI.Controllers
                     });
                 }
 
+                // ELIMINAR USUARIO - Ahora con manejo de foreign keys
                 await _usuarioService.DeleteAsync(id);
+
+                _logger.LogInformation("✅ Usuario eliminado exitosamente: {UsuarioID}", id);
 
                 return Ok(new ApiResponse<bool>
                 {
@@ -214,8 +245,18 @@ namespace GymAPI.Controllers
                     Message = "Usuario eliminado correctamente"
                 });
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning("❌ Error de validación al eliminar usuario {UsuarioID}: {Message}", id, ex.Message);
+                return BadRequest(new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
+            }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "💥 ERROR CRITICO al eliminar usuario {UsuarioID}: {Message}", id, ex.Message);
                 return StatusCode(500, new ApiResponse<bool>
                 {
                     Success = false,
@@ -254,6 +295,7 @@ namespace GymAPI.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al obtener ejercicios");
                 return StatusCode(500, new ApiResponse<List<EjercicioDTO>>
                 {
                     Success = false,
@@ -302,6 +344,7 @@ namespace GymAPI.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al crear ejercicio");
                 return StatusCode(500, new ApiResponse<EjercicioDTO>
                 {
                     Success = false,
@@ -352,6 +395,7 @@ namespace GymAPI.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al actualizar ejercicio {EjercicioID}", id);
                 return StatusCode(500, new ApiResponse<bool>
                 {
                     Success = false,
@@ -379,6 +423,7 @@ namespace GymAPI.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al eliminar ejercicio {EjercicioID}", id);
                 return StatusCode(500, new ApiResponse<bool>
                 {
                     Success = false,
@@ -419,6 +464,7 @@ namespace GymAPI.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al obtener entrenamientos");
                 return StatusCode(500, new ApiResponse<List<EntrenamientoDTO>>
                 {
                     Success = false,
@@ -446,6 +492,7 @@ namespace GymAPI.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al eliminar entrenamiento {EntrenamientoID}", id);
                 return StatusCode(500, new ApiResponse<bool>
                 {
                     Success = false,
@@ -454,7 +501,7 @@ namespace GymAPI.Controllers
             }
         }
 
-        // ============ DASHBOARD INFO ============
+        // ============ DASHBOARD INFO MEJORADO ============
 
         [HttpGet("dashboard")]
         public async Task<ActionResult<ApiResponse<object>>> GetDashboardInfo()
@@ -464,19 +511,17 @@ namespace GymAPI.Controllers
 
             try
             {
-                var usuarios = await _usuarioService.GetAllAsync();
-                var ejercicios = await _ejercicioRepository.GetAllAsync();
-                var entrenamientos = await _entrenamientoRepository.GetAllAsync();
-
+                // Usar los métodos optimizados del servicio
                 var dashboardData = new
                 {
-                    TotalUsuarios = usuarios.Count,
-                    UsuariosActivos = usuarios.Count(u => u.EstaActivo),
-                    TotalAdministradores = usuarios.Count(u => u.EsAdmin),
-                    TotalEjercicios = ejercicios.Count,
-                    TotalEntrenamientos = entrenamientos.Count,
-                    EntrenamientosPublicos = entrenamientos.Count(e => e.Publico),
-                    UsuariosRegistradosHoy = usuarios.Count(u => u.FechaRegistro.Date == DateTime.Today)
+                    TotalUsuarios = await _usuarioService.GetTotalUsersCountAsync(),
+                    UsuariosActivos = await _usuarioService.GetActiveUsersCountAsync(),
+                    TotalAdministradores = await _usuarioService.GetAdminUsersCountAsync(),
+                    UsuariosRegistradosHoy = await _usuarioService.GetUsersRegisteredTodayAsync(),
+                    UsuariosRegistradosEsteMes = await _usuarioService.GetUsersRegisteredThisMonthAsync(),
+                    TotalEjercicios = (await _ejercicioRepository.GetAllAsync()).Count,
+                    TotalEntrenamientos = (await _entrenamientoRepository.GetAllAsync()).Count,
+                    EntrenamientosPublicos = (await _entrenamientoRepository.GetAllAsync()).Count(e => e.Publico)
                 };
 
                 return Ok(new ApiResponse<object>
@@ -487,6 +532,7 @@ namespace GymAPI.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al obtener datos del dashboard");
                 return StatusCode(500, new ApiResponse<object>
                 {
                     Success = false,
