@@ -32,33 +32,45 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSet
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<IEmailService, EmailService>();
 
+// 🔹 Configurar Cloudinary Settings
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
+builder.Services.AddScoped<IImageService, CloudinaryImageService>();
+
+// 🔹 Configurar Google Auth Settings
+builder.Services.Configure<GoogleAuthSettings>(
+    builder.Configuration.GetSection("Authentication:Google"));
+
 // 🔹 Obtener la cadena de conexión
-var connectionString = builder.Configuration.GetConnectionString("GymappDB");
+var connectionString = builder.Configuration.GetConnectionString("GymappDB")
+    ?? throw new InvalidOperationException("Connection string 'GymappDB' not found.");
 
 // 🔹 Registrar los repositorios con la cadena de conexión
 builder.Services.AddScoped<IUsuarioRepository>(provider =>
     new UsuarioRepository(connectionString));
+
 builder.Services.AddScoped<IEntrenamientoRepository>(provider =>
     new EntrenamientoRepository(connectionString));
+
 builder.Services.AddScoped<IEjercicioRepository>(provider =>
     new EjercicioRepository(connectionString));
+
 builder.Services.AddScoped<IEntrenamientoEjercicioRepository>(provider =>
     new EntrenamientoEjercicioRepository(connectionString));
+
 builder.Services.AddScoped<IComentarioRepository>(provider =>
     new ComentarioRepository(connectionString));
+
 builder.Services.AddScoped<IMedicionRepository>(provider =>
     new MedicionRepository(connectionString));
+
 builder.Services.AddScoped<IRutinaCompletadaRepository>(provider =>
     new RutinaCompletadaRepository(connectionString));
 
-// Registrar repositorios de logros con la cadena de conexión
-builder.Services.AddScoped<ILogroRepository>(provider => 
+builder.Services.AddScoped<ILogroRepository>(provider =>
     new LogroRepository(connectionString));
-builder.Services.AddScoped<IUsuarioLogroRepository>(provider => 
-    new UsuarioLogroRepository(connectionString));
 
-builder.Services.Configure<GoogleAuthSettings>(
-    builder.Configuration.GetSection("Authentication:Google"));
+builder.Services.AddScoped<IUsuarioLogroRepository>(provider =>
+    new UsuarioLogroRepository(connectionString));
 
 // 🔹 Registrar los servicios
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
@@ -69,25 +81,22 @@ builder.Services.AddScoped<IComentarioService, ComentarioService>();
 builder.Services.AddScoped<IMedicionService, MedicionService>();
 builder.Services.AddScoped<IRutinaCompletadaService, RutinaCompletadaService>();
 builder.Services.AddScoped<ILogroService, LogroService>();
-// Añade estas líneas en Program.cs
-// Configurar Cloudinary Settings
-builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
-builder.Services.AddScoped<IImageService, CloudinaryImageService>();
-
-// Registrar servicio de roles
 builder.Services.AddScoped<IRolService, RolService>();
 
+// 🔹 Configurar controladores
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 // 🔹 Configurar Swagger para autenticación - SIEMPRE habilitado
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo {
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
         Title = "GymAPI",
         Version = "v1",
         Description = "API para aplicación de entrenamiento personal"
     });
+
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -97,6 +106,7 @@ builder.Services.AddSwaggerGen(c =>
         In = ParameterLocation.Header,
         Description = "Ingrese el token en el formato: Bearer {token}"
     });
+
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -113,29 +123,30 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// 🔹 Configurar CORS para permitir Vue - Corregido para evitar el error con AllowCredentials
+// 🔹 Configurar CORS para permitir Vue
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowVueApp",
-        builder =>
-        {
-            builder
-                .AllowAnyOrigin()
-                .AllowAnyMethod()
-                .AllowAnyHeader();
-        });
+    options.AddPolicy("AllowVueApp", builder =>
+    {
+        builder
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
 });
 
 var app = builder.Build();
 
+// 🔹 Middleware
 app.UseStaticFiles();
 app.UseCors("AllowVueApp");
 
 // 🔹 Habilitar Swagger en todos los entornos
 app.UseSwagger();
-app.UseSwaggerUI(c => {
+app.UseSwaggerUI(c =>
+{
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "GymAPI v1");
-    // Opcional: Hacer que Swagger UI sea la página de inicio
+    // Hacer que Swagger UI sea la página de inicio
     c.RoutePrefix = string.Empty;
 });
 
@@ -145,7 +156,7 @@ if (app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-// 🔹 Añadir middleware de autenticación y autorización
+// 🔹 Middleware de autenticación y autorización
 app.UseAuthentication();
 app.UseAuthorization();
 

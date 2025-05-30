@@ -29,17 +29,17 @@ namespace GymAPI.Repositories
                     {
                         var usuario = new Usuario
                         {
-                            UsuarioID = reader.GetInt32("UsuarioID"),
-                            Nombre = reader.GetString("Nombre"),
-                            Apellido = reader.GetString("Apellido"),
-                            Email = reader.GetString("Email"),
-                            FechaRegistro = reader.GetDateTime("FechaRegistro"),
-                            EstaActivo = reader.GetBoolean("EstaActivo"),
-                            EsAdmin = reader.GetBoolean("EsAdmin"),
-                            Edad = reader.IsDBNull("Edad") ? null : reader.GetInt32("Edad"),
-                            Altura = reader.IsDBNull("Altura") ? null : reader.GetFloat("Altura"),
-                            Peso = reader.IsDBNull("Peso") ? null : reader.GetFloat("Peso"),
-                            FotoPerfilURL = reader.IsDBNull("FotoPerfilURL") ? null : reader.GetString("FotoPerfilURL")
+                            UsuarioID = reader.GetInt32(0),
+                            Nombre = reader.GetString(1),
+                            Apellido = reader.GetString(2),
+                            Email = reader.GetString(3),
+                            FechaRegistro = reader.GetDateTime(4),
+                            EstaActivo = reader.GetBoolean(5),
+                            EsAdmin = reader.GetBoolean(6),
+                            Edad = reader.IsDBNull(7) ? null : reader.GetInt32(7),
+                            Altura = reader.IsDBNull(8) ? null : reader.GetFloat(8),
+                            Peso = reader.IsDBNull(9) ? null : reader.GetFloat(9),
+                            FotoPerfilURL = reader.IsDBNull(10) ? null : reader.GetString(10)
                         };
                         usuarios.Add(usuario);
                     }
@@ -68,20 +68,20 @@ namespace GymAPI.Repositories
                         {
                             usuario = new Usuario
                             {
-                                UsuarioID = reader.GetInt32("UsuarioID"),
-                                Nombre = reader.GetString("Nombre"),
-                                Apellido = reader.GetString("Apellido"),
-                                Email = reader.GetString("Email"),
-                                Password = reader.GetString("Password"),
-                                FechaRegistro = reader.GetDateTime("FechaRegistro"),
-                                EstaActivo = reader.GetBoolean("EstaActivo"),
-                                EsAdmin = reader.GetBoolean("EsAdmin"),
-                                Edad = reader.IsDBNull("Edad") ? null : reader.GetInt32("Edad"),
-                                Altura = reader.IsDBNull("Altura") ? null : reader.GetFloat("Altura"),
-                                Peso = reader.IsDBNull("Peso") ? null : reader.GetFloat("Peso"),
-                                FotoPerfilURL = reader.IsDBNull("FotoPerfilURL") ? null : reader.GetString("FotoPerfilURL"),
-                                ResetPasswordToken = reader.IsDBNull("ResetPasswordToken") ? null : reader.GetString("ResetPasswordToken"),
-                                ResetPasswordExpires = reader.IsDBNull("ResetPasswordExpires") ? null : reader.GetDateTime("ResetPasswordExpires")
+                                UsuarioID = reader.GetInt32(0),
+                                Nombre = reader.GetString(1),
+                                Apellido = reader.GetString(2),
+                                Email = reader.GetString(3),
+                                Password = reader.GetString(4),
+                                FechaRegistro = reader.GetDateTime(5),
+                                EstaActivo = reader.GetBoolean(6),
+                                EsAdmin = reader.GetBoolean(7),
+                                Edad = reader.IsDBNull(8) ? null : reader.GetInt32(8),
+                                Altura = reader.IsDBNull(9) ? null : reader.GetFloat(9),
+                                Peso = reader.IsDBNull(10) ? null : reader.GetFloat(10),
+                                FotoPerfilURL = reader.IsDBNull(11) ? null : reader.GetString(11),
+                                ResetPasswordToken = reader.IsDBNull(12) ? null : reader.GetString(12),
+                                ResetPasswordExpires = reader.IsDBNull(13) ? null : reader.GetDateTime(13)
                             };
                         }
                     }
@@ -113,20 +113,20 @@ namespace GymAPI.Repositories
                         {
                             usuario = new Usuario
                             {
-                                UsuarioID = reader.GetInt32("UsuarioID"),
-                                Nombre = reader.GetString("Nombre"),
-                                Apellido = reader.GetString("Apellido"),
-                                Email = reader.GetString("Email"),
-                                Password = reader.GetString("Password"),
-                                FechaRegistro = reader.GetDateTime("FechaRegistro"),
-                                EstaActivo = reader.GetBoolean("EstaActivo"),
-                                EsAdmin = reader.GetBoolean("EsAdmin"),
-                                ResetPasswordToken = reader.IsDBNull("ResetPasswordToken") ? null : reader.GetString("ResetPasswordToken"),
-                                ResetPasswordExpires = reader.IsDBNull("ResetPasswordExpires") ? null : reader.GetDateTime("ResetPasswordExpires"),
-                                Edad = reader.IsDBNull("Edad") ? null : reader.GetInt32("Edad"),
-                                Altura = reader.IsDBNull("Altura") ? null : reader.GetFloat("Altura"),
-                                Peso = reader.IsDBNull("Peso") ? null : reader.GetFloat("Peso"),
-                                FotoPerfilURL = reader.IsDBNull("FotoPerfilURL") ? null : reader.GetString("FotoPerfilURL")
+                                UsuarioID = reader.GetInt32(0),
+                                Nombre = reader.GetString(1),
+                                Apellido = reader.GetString(2),
+                                Email = reader.GetString(3),
+                                Password = reader.GetString(4),
+                                FechaRegistro = reader.GetDateTime(5),
+                                EstaActivo = reader.GetBoolean(6),
+                                EsAdmin = reader.GetBoolean(7),
+                                ResetPasswordToken = reader.IsDBNull(8) ? null : reader.GetString(8),
+                                ResetPasswordExpires = reader.IsDBNull(9) ? null : reader.GetDateTime(9),
+                                Edad = reader.IsDBNull(10) ? null : reader.GetInt32(10),
+                                Altura = reader.IsDBNull(11) ? null : reader.GetFloat(11),
+                                Peso = reader.IsDBNull(12) ? null : reader.GetFloat(12),
+                                FotoPerfilURL = reader.IsDBNull(13) ? null : reader.GetString(13)
                             };
                         }
                     }
@@ -180,20 +180,20 @@ namespace GymAPI.Repositories
                         {
                             usuario = new Usuario
                             {
-                                UsuarioID = reader.GetInt32("UsuarioID"),
-                                Nombre = reader.GetString("Nombre"),
-                                Apellido = reader.GetString("Apellido"),
-                                Email = reader.GetString("Email"),
-                                Password = reader.GetString("Password"),
-                                FechaRegistro = reader.GetDateTime("FechaRegistro"),
-                                EstaActivo = reader.GetBoolean("EstaActivo"),
-                                EsAdmin = reader.GetBoolean("EsAdmin"),
-                                ResetPasswordToken = reader.IsDBNull("ResetPasswordToken") ? null : reader.GetString("ResetPasswordToken"),
-                                ResetPasswordExpires = reader.IsDBNull("ResetPasswordExpires") ? null : reader.GetDateTime("ResetPasswordExpires"),
-                                FotoPerfilURL = reader.IsDBNull("FotoPerfilURL") ? null : reader.GetString("FotoPerfilURL"),
-                                Edad = reader.IsDBNull("Edad") ? null : reader.GetInt32("Edad"),
-                                Altura = reader.IsDBNull("Altura") ? null : reader.GetFloat("Altura"),
-                                Peso = reader.IsDBNull("Peso") ? null : reader.GetFloat("Peso")
+                                UsuarioID = reader.GetInt32(0),
+                                Nombre = reader.GetString(1),
+                                Apellido = reader.GetString(2),
+                                Email = reader.GetString(3),
+                                Password = reader.GetString(4),
+                                FechaRegistro = reader.GetDateTime(5),
+                                EstaActivo = reader.GetBoolean(6),
+                                EsAdmin = reader.GetBoolean(7),
+                                ResetPasswordToken = reader.IsDBNull(8) ? null : reader.GetString(8),
+                                ResetPasswordExpires = reader.IsDBNull(9) ? null : reader.GetDateTime(9),
+                                FotoPerfilURL = reader.IsDBNull(10) ? null : reader.GetString(10),
+                                Edad = reader.IsDBNull(11) ? null : reader.GetInt32(11),
+                                Altura = reader.IsDBNull(12) ? null : reader.GetFloat(12),
+                                Peso = reader.IsDBNull(13) ? null : reader.GetFloat(13)
                             };
                         }
                     }
@@ -449,6 +449,27 @@ namespace GymAPI.Repositories
                     
                     var count = Convert.ToInt32(await command.ExecuteScalarAsync());
                     return count > 0;
+                }
+            }
+        }
+
+        public async Task UpdatePasswordAsync(int userId, string newPassword)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                string query = @"UPDATE Usuarios 
+                                SET Password = @Password,
+                                    ResetPasswordToken = NULL,
+                                    ResetPasswordExpires = NULL
+                                WHERE UsuarioID = @UserId";
+                
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@UserId", userId);
+                    command.Parameters.AddWithValue("@Password", newPassword ?? string.Empty);
+                    
+                    await command.ExecuteNonQueryAsync();
                 }
             }
         }

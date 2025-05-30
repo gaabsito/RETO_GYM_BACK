@@ -3,7 +3,7 @@ GO
 
 -- Insertar Usuarios (CON CAMPO EsAdmin AÑADIDO)
 INSERT INTO Usuarios (Nombre, Apellido, Email, Password, FechaRegistro, EstaActivo, EsAdmin, ResetPasswordToken, ResetPasswordExpires) VALUES
-('Carlos', 'Pérez', 'carlos@example.com', 'hashed_password_1', GETDATE(), 1, 1, NULL, NULL),  
+('Carlos', 'Pérez', 'carlos@example.com', 'hashed_password_1', GETDATE(), 1, 0, NULL, NULL),  
 ('Ana', 'López', 'ana@example.com', 'hashed_password_2', GETDATE(), 1, 0, NULL, NULL),
 ('David', 'García', 'david@example.com', 'hashed_password_3', GETDATE(), 1, 0, NULL, NULL),
 ('Juanjo', 'Gutierrez', 'juanjo@example.com', 'hashed_password_4', GETDATE(), 1, 0, NULL, NULL);
