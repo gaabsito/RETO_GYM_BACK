@@ -526,21 +526,16 @@ namespace GymAPI.Controllers
             }
         }
 
+        // NUEVO: Crear entrenamiento completo con ejercicios como el controlador normal
         [HttpPost("entrenamientos")]
-        public async Task<ActionResult<ApiResponse<EntrenamientoDTO>>> CreateWorkout(
-            [FromForm] string Titulo, 
-            [FromForm] string? Descripcion, 
-            [FromForm] int DuracionMinutos, 
-            [FromForm] string Dificultad, 
-            [FromForm] bool Publico, 
-            [FromForm] IFormFile? Imagen)
+        public async Task<ActionResult<ApiResponse<EntrenamientoDTO>>> CreateWorkout([FromForm] AdminEntrenamientoCreateRequest request)
         {
             if (!await IsCurrentUserAdmin())
                 return Forbid();
 
             try
             {
-                _logger.LogInformation("🔥 Creando entrenamiento: {Titulo}", Titulo);
+                _logger.LogInformation("🔥 Admin creando entrenamiento: {Titulo}", request.Titulo);
 
                 // Obtener el ID del usuario administrador
                 var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -556,19 +551,19 @@ namespace GymAPI.Controllers
                 // Crear el entrenamiento base
                 var entrenamiento = new Entrenamiento
                 {
-                    Titulo = Titulo,
-                    Descripcion = Descripcion ?? "",
-                    DuracionMinutos = DuracionMinutos,
-                    Dificultad = Dificultad,
+                    Titulo = request.Titulo,
+                    Descripcion = request.Descripcion ?? "",
+                    DuracionMinutos = request.DuracionMinutos,
+                    Dificultad = request.Dificultad,
                     FechaCreacion = DateTime.Now,
-                    Publico = Publico,
+                    Publico = request.Publico,
                     AutorID = userId
                 };
 
                 // Procesar la imagen si se proporciona
-                if (Imagen != null)
+                if (request.Imagen != null)
                 {
-                    if (!FileValidationHelper.ValidateImageFile(Imagen, out string errorMessage))
+                    if (!FileValidationHelper.ValidateImageFile(request.Imagen, out string errorMessage))
                     {
                         return BadRequest(new ApiResponse<EntrenamientoDTO>
                         {
@@ -578,12 +573,31 @@ namespace GymAPI.Controllers
                     }
 
                     // Subir imagen a Cloudinary
-                    string imageUrl = await _imageService.UploadImageAsync(Imagen);
+                    string imageUrl = await _imageService.UploadImageAsync(request.Imagen);
                     entrenamiento.ImagenURL = imageUrl;
                 }
 
                 // Guardar el entrenamiento en la base de datos
                 await _entrenamientoService.AddAsync(entrenamiento);
+
+                // Procesar los ejercicios relacionados
+                if (request.Ejercicios != null && request.Ejercicios.Any())
+                {
+                    foreach (var ejercicio in request.Ejercicios)
+                    {
+                        var entrenamientoEjercicio = new EntrenamientoEjercicio
+                        {
+                            EntrenamientoID = entrenamiento.EntrenamientoID,
+                            EjercicioID = ejercicio.EjercicioID,
+                            Series = ejercicio.Series,
+                            Repeticiones = ejercicio.Repeticiones,
+                            DescansoSegundos = ejercicio.DescansoSegundos,
+                            Notas = ejercicio.Notas
+                        };
+
+                        await _entrenamientoEjercicioService.AddAsync(entrenamientoEjercicio);
+                    }
+                }
 
                 var entrenamientoResponse = new EntrenamientoDTO
                 {
@@ -598,7 +612,7 @@ namespace GymAPI.Controllers
                     AutorID = entrenamiento.AutorID
                 };
 
-                _logger.LogInformation("✅ Entrenamiento creado exitosamente: {EntrenamientoID}", entrenamiento.EntrenamientoID);
+                _logger.LogInformation("✅ Admin - Entrenamiento creado exitosamente: {EntrenamientoID}", entrenamiento.EntrenamientoID);
 
                 return Ok(new ApiResponse<EntrenamientoDTO>
                 {
@@ -609,7 +623,7 @@ namespace GymAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error inesperado al crear entrenamiento");
+                _logger.LogError(ex, "❌ Error inesperado al crear entrenamiento de admin");
                 return StatusCode(500, new ApiResponse<EntrenamientoDTO>
                 {
                     Success = false,
@@ -618,21 +632,16 @@ namespace GymAPI.Controllers
             }
         }
 
+        // ACTUALIZADO: Actualizar entrenamiento completo con ejercicios
         [HttpPut("entrenamientos/{id}")]
-        public async Task<ActionResult<ApiResponse<bool>>> UpdateWorkout(int id, 
-            [FromForm] string? Titulo, 
-            [FromForm] string? Descripcion, 
-            [FromForm] int? DuracionMinutos, 
-            [FromForm] string? Dificultad, 
-            [FromForm] bool? Publico, 
-            [FromForm] IFormFile? Imagen)
+        public async Task<ActionResult<ApiResponse<bool>>> UpdateWorkout(int id, [FromForm] AdminEntrenamientoUpdateRequest request)
         {
             if (!await IsCurrentUserAdmin())
                 return Forbid();
 
             try
             {
-                _logger.LogInformation("🔥 Actualizando entrenamiento ID: {EntrenamientoID}", id);
+                _logger.LogInformation("🔥 Admin actualizando entrenamiento ID: {EntrenamientoID}", id);
 
                 var entrenamiento = await _entrenamientoService.GetByIdAsync(id);
                 if (entrenamiento == null)
@@ -645,21 +654,21 @@ namespace GymAPI.Controllers
                 }
 
                 // Actualizar propiedades básicas solo si se proporcionan
-                if (!string.IsNullOrEmpty(Titulo))
-                    entrenamiento.Titulo = Titulo;
-                if (!string.IsNullOrEmpty(Descripcion))
-                    entrenamiento.Descripcion = Descripcion;
-                if (DuracionMinutos.HasValue)
-                    entrenamiento.DuracionMinutos = DuracionMinutos.Value;
-                if (!string.IsNullOrEmpty(Dificultad))
-                    entrenamiento.Dificultad = Dificultad;
-                if (Publico.HasValue)
-                    entrenamiento.Publico = Publico.Value;
+                if (!string.IsNullOrEmpty(request.Titulo))
+                    entrenamiento.Titulo = request.Titulo;
+                if (!string.IsNullOrEmpty(request.Descripcion))
+                    entrenamiento.Descripcion = request.Descripcion;
+                if (request.DuracionMinutos.HasValue)
+                    entrenamiento.DuracionMinutos = request.DuracionMinutos.Value;
+                if (!string.IsNullOrEmpty(request.Dificultad))
+                    entrenamiento.Dificultad = request.Dificultad;
+                if (request.Publico.HasValue)
+                    entrenamiento.Publico = request.Publico.Value;
 
                 // Procesar nueva imagen si se proporciona
-                if (Imagen != null)
+                if (request.Imagen != null)
                 {
-                    if (!FileValidationHelper.ValidateImageFile(Imagen, out string errorMessage))
+                    if (!FileValidationHelper.ValidateImageFile(request.Imagen, out string errorMessage))
                     {
                         return BadRequest(new ApiResponse<bool>
                         {
@@ -686,14 +695,41 @@ namespace GymAPI.Controllers
                     }
 
                     // Subir nueva imagen
-                    string imageUrl = await _imageService.UploadImageAsync(Imagen);
+                    string imageUrl = await _imageService.UploadImageAsync(request.Imagen);
                     entrenamiento.ImagenURL = imageUrl;
                 }
 
                 // Actualizar entrenamiento
                 await _entrenamientoService.UpdateAsync(entrenamiento);
 
-                _logger.LogInformation("✅ Entrenamiento actualizado exitosamente: {EntrenamientoID}", id);
+                // Si hay ejercicios nuevos, eliminar los antiguos y añadir los nuevos
+                if (request.Ejercicios != null && request.Ejercicios.Any())
+                {
+                    // Eliminar ejercicios existentes
+                    var ejerciciosExistentes = await _entrenamientoEjercicioService.GetByEntrenamientoAsync(id);
+                    foreach (var ejercicioExistente in ejerciciosExistentes)
+                    {
+                        await _entrenamientoEjercicioService.RemoveAsync(ejercicioExistente.EntrenamientoID, ejercicioExistente.EjercicioID);
+                    }
+
+                    // Añadir nuevos ejercicios
+                    foreach (var ejercicio in request.Ejercicios)
+                    {
+                        var entrenamientoEjercicio = new EntrenamientoEjercicio
+                        {
+                            EntrenamientoID = entrenamiento.EntrenamientoID,
+                            EjercicioID = ejercicio.EjercicioID,
+                            Series = ejercicio.Series,
+                            Repeticiones = ejercicio.Repeticiones,
+                            DescansoSegundos = ejercicio.DescansoSegundos,
+                            Notas = ejercicio.Notas
+                        };
+
+                        await _entrenamientoEjercicioService.AddAsync(entrenamientoEjercicio);
+                    }
+                }
+
+                _logger.LogInformation("✅ Admin - Entrenamiento actualizado exitosamente: {EntrenamientoID}", id);
 
                 return Ok(new ApiResponse<bool>
                 {
@@ -819,5 +855,29 @@ namespace GymAPI.Controllers
                 });
             }
         }
+    }
+
+    // DTO para la solicitud de creación de entrenamiento de admin
+    public class AdminEntrenamientoCreateRequest
+    {
+        public string Titulo { get; set; } = "";
+        public string? Descripcion { get; set; }
+        public int DuracionMinutos { get; set; }
+        public string Dificultad { get; set; } = "";
+        public bool Publico { get; set; }
+        public IFormFile? Imagen { get; set; }
+        public List<EntrenamientoEjercicioCreateDTO>? Ejercicios { get; set; }
+    }
+
+    // DTO para la solicitud de actualización de entrenamiento de admin
+    public class AdminEntrenamientoUpdateRequest
+    {
+        public string? Titulo { get; set; }
+        public string? Descripcion { get; set; }
+        public int? DuracionMinutos { get; set; }
+        public string? Dificultad { get; set; }
+        public bool? Publico { get; set; }
+        public IFormFile? Imagen { get; set; }
+        public List<EntrenamientoEjercicioCreateDTO>? Ejercicios { get; set; }
     }
 }
