@@ -427,20 +427,31 @@ namespace GymAPI.Repositories
             return rutinasCompletadas;
         }
 
-        // NUEVO MÉTODO PARA CONTAR DÍAS ÚNICOS ENTRENADOS EN LA SEMANA ACTUAL
+        // ✅ CORREGIDO: MÉTODO PARA CONTAR DÍAS ÚNICOS ENTRENADOS EN LA SEMANA ACTUAL (LUNES-DOMINGO)
         public async Task<int> GetUniqueTrainingDaysThisWeekAsync(int usuarioId)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                // Esta consulta cuenta los días DISTINTOS en la semana actual
-                // usando DATEPART(ww, GETDATE()) para obtener el número de semana del año actual
+                
+                // ✅ NUEVA CONSULTA: Calcula semana de LUNES a DOMINGO (ISO 8601)
                 string query = @"
+                    DECLARE @Today DATE = CAST(GETDATE() AS DATE);
+                    DECLARE @DayOfWeek INT = DATEPART(WEEKDAY, @Today);
+                    DECLARE @MondayOfWeek DATE = DATEADD(DAY, 
+                        CASE 
+                            WHEN @DayOfWeek = 1 THEN -6  -- Si es domingo (1), retroceder 6 días para llegar al lunes
+                            ELSE 2 - @DayOfWeek          -- Si no, calcular días hasta el lunes anterior
+                        END, 
+                        @Today
+                    );
+                    DECLARE @SundayOfWeek DATE = DATEADD(DAY, 6, @MondayOfWeek);
+                    
                     SELECT COUNT(DISTINCT CAST(FechaCompletada AS DATE)) 
                     FROM RutinasCompletadas 
                     WHERE UsuarioID = @UsuarioId 
-                      AND DATEPART(ww, FechaCompletada) = DATEPART(ww, GETDATE())
-                      AND DATEPART(yyyy, FechaCompletada) = DATEPART(yyyy, GETDATE())";
+                      AND CAST(FechaCompletada AS DATE) >= @MondayOfWeek
+                      AND CAST(FechaCompletada AS DATE) <= @SundayOfWeek";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -450,7 +461,7 @@ namespace GymAPI.Repositories
             }
         }
 
-        // MÉTODO PARA OBTENER ESTADÍSTICAS POR SEMANA
+        // ✅ CORREGIDO: MÉTODO PARA OBTENER ESTADÍSTICAS POR SEMANA (LUNES-DOMINGO)
         public async Task<Dictionary<int, int>> GetUniqueTrainingDaysLastWeeksAsync(int usuarioId, int numberOfWeeks)
         {
             var trainingDaysByWeek = new Dictionary<int, int>();
@@ -458,21 +469,40 @@ namespace GymAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                // Esta consulta obtiene el conteo de días únicos por semana para las últimas N semanas
+                
+                // ✅ NUEVA CONSULTA: Calcula semanas ISO 8601 (Lunes-Domingo)
                 string query = @"
-                    WITH WeeklyTrainingData AS (
+                    WITH WeeklyData AS (
                         SELECT 
-                            DATEPART(ww, FechaCompletada) AS WeekNumber,
-                            DATEPART(yyyy, FechaCompletada) AS Year,
-                            CAST(FechaCompletada AS DATE) AS TrainingDate
+                            FechaCompletada,
+                            CAST(FechaCompletada AS DATE) AS TrainingDate,
+                            -- Calcular el lunes de cada semana (ISO 8601)
+                            DATEADD(DAY, 
+                                CASE 
+                                    WHEN DATEPART(WEEKDAY, FechaCompletada) = 1 THEN -6  -- Domingo
+                                    ELSE 2 - DATEPART(WEEKDAY, FechaCompletada)          -- Otros días
+                                END, 
+                                CAST(FechaCompletada AS DATE)
+                            ) AS MondayOfWeek
                         FROM RutinasCompletadas 
                         WHERE UsuarioID = @UsuarioId 
                           AND FechaCompletada >= DATEADD(WEEK, -@NumberOfWeeks, GETDATE())
+                    ),
+                    WeekNumbers AS (
+                        SELECT 
+                            TrainingDate,
+                            MondayOfWeek,
+                            DATEPART(YEAR, MondayOfWeek) AS WeekYear,
+                            DATEPART(WEEK, MondayOfWeek) AS WeekNumber
+                        FROM WeeklyData
                     )
-                    SELECT WeekNumber, Year, COUNT(DISTINCT TrainingDate) AS UniqueTrainingDays
-                    FROM WeeklyTrainingData
-                    GROUP BY WeekNumber, Year
-                    ORDER BY Year DESC, WeekNumber DESC";
+                    SELECT 
+                        WeekYear,
+                        WeekNumber, 
+                        COUNT(DISTINCT TrainingDate) AS UniqueTrainingDays
+                    FROM WeekNumbers
+                    GROUP BY WeekYear, WeekNumber
+                    ORDER BY WeekYear DESC, WeekNumber DESC";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -483,11 +513,11 @@ namespace GymAPI.Repositories
                     {
                         while (await reader.ReadAsync())
                         {
-                            int weekNumber = reader.GetInt32(0);
-                            int year = reader.GetInt32(1);
+                            int year = reader.GetInt32(0);
+                            int weekNumber = reader.GetInt32(1);
                             int trainingDays = reader.GetInt32(2);
                             
-                            // Usamos una clave compuesta (año-semana) para identificar cada semana de forma única
+                            // Crear clave única para la semana
                             int weekKey = year * 100 + weekNumber;
                             trainingDaysByWeek.Add(weekKey, trainingDays);
                         }
