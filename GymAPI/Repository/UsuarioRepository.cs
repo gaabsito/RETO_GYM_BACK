@@ -1,15 +1,18 @@
 using Microsoft.Data.SqlClient;
 using GymAPI.Models;
+using Microsoft.Extensions.Logging;
 
 namespace GymAPI.Repositories
 {
     public class UsuarioRepository : IUsuarioRepository
     {
         private readonly string _connectionString;
+        private readonly ILogger<UsuarioRepository>? _logger;
 
-        public UsuarioRepository(string connectionString)
+        public UsuarioRepository(string connectionString, ILogger<UsuarioRepository>? logger = null)
         {
             _connectionString = connectionString;
+            _logger = logger;
         }
 
         public async Task<List<Usuario>> GetAllAsync()
@@ -236,9 +239,14 @@ namespace GymAPI.Repositories
         
         public async Task UpdateAsync(Usuario usuario)
         {
+            _logger?.LogInformation("🔍 REPOSITORY: Iniciando actualización de usuario {UsuarioID}", usuario.UsuarioID);
+            _logger?.LogInformation("🔍 REPOSITORY: Datos a actualizar - EsAdmin: {EsAdmin}, EstaActivo: {EstaActivo}", 
+                usuario.EsAdmin, usuario.EstaActivo);
+
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
+                _logger?.LogInformation("🔗 REPOSITORY: Conexión a BD abierta");
 
                 string query = @"UPDATE Usuarios
                                SET Nombre = @Nombre,
@@ -252,6 +260,8 @@ namespace GymAPI.Repositories
                                    Peso = @Peso,
                                    FotoPerfilURL = @FotoPerfilURL
                                WHERE UsuarioID = @Id";
+
+                _logger?.LogInformation("🔍 REPOSITORY: Query SQL: {Query}", query);
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -267,7 +277,42 @@ namespace GymAPI.Repositories
                     command.Parameters.AddWithValue("@Peso", usuario.Peso as object ?? DBNull.Value);
                     command.Parameters.AddWithValue("@FotoPerfilURL", usuario.FotoPerfilURL as object ?? DBNull.Value);
 
-                    await command.ExecuteNonQueryAsync();
+                    _logger?.LogInformation("🔍 REPOSITORY: Parámetros - UsuarioID: {UsuarioID}, EsAdmin: {EsAdmin}, EstaActivo: {EstaActivo}", 
+                        usuario.UsuarioID, usuario.EsAdmin, usuario.EstaActivo);
+
+                    int rowsAffected = await command.ExecuteNonQueryAsync();
+                    
+                    _logger?.LogInformation("🔍 REPOSITORY: Filas afectadas: {RowsAffected}", rowsAffected);
+
+                    if (rowsAffected == 0)
+                    {
+                        _logger?.LogWarning("⚠️ REPOSITORY: No se actualizó ninguna fila para usuario {UsuarioID}", usuario.UsuarioID);
+                        throw new InvalidOperationException($"No se pudo actualizar el usuario con ID {usuario.UsuarioID}");
+                    }
+                    else
+                    {
+                        _logger?.LogInformation("✅ REPOSITORY: Usuario {UsuarioID} actualizado exitosamente", usuario.UsuarioID);
+                    }
+                }
+            }
+
+            // 🔍 VERIFICACIÓN ADICIONAL: Leer el usuario de vuelta para confirmar cambios
+            _logger?.LogInformation("🔍 REPOSITORY: Verificando cambios en BD...");
+            var usuarioVerificado = await GetByIdAsync(usuario.UsuarioID);
+            if (usuarioVerificado != null)
+            {
+                _logger?.LogInformation("🔍 REPOSITORY: Usuario verificado - EsAdmin: {EsAdmin}, EstaActivo: {EstaActivo}", 
+                    usuarioVerificado.EsAdmin, usuarioVerificado.EstaActivo);
+                
+                if (usuarioVerificado.EsAdmin != usuario.EsAdmin)
+                {
+                    _logger?.LogError("🚨 REPOSITORY: ERROR - EsAdmin no se actualizó. Esperado: {Esperado}, Actual: {Actual}", 
+                        usuario.EsAdmin, usuarioVerificado.EsAdmin);
+                }
+                if (usuarioVerificado.EstaActivo != usuario.EstaActivo)
+                {
+                    _logger?.LogError("🚨 REPOSITORY: ERROR - EstaActivo no se actualizó. Esperado: {Esperado}, Actual: {Actual}", 
+                        usuario.EstaActivo, usuarioVerificado.EstaActivo);
                 }
             }
         }

@@ -6,6 +6,7 @@ using GymAPI.Services;
 using GymAPI.DTOs;
 using GymAPI.Repositories;
 using GymAPI.Utilities;
+using System.Text.Json;
 
 namespace GymAPI.Controllers
 {
@@ -92,7 +93,7 @@ namespace GymAPI.Controllers
         }
 
         [HttpPost("usuarios")]
-        public async Task<ActionResult<ApiResponse<UsuarioDTO>>> CreateUser(UsuarioCreateDTO userDTO)
+        public async Task<ActionResult<ApiResponse<UsuarioDTO>>> CreateUser([FromBody] UsuarioCreateDTO userDTO)
         {
             if (!await IsCurrentUserAdmin())
                 return Forbid();
@@ -154,13 +155,69 @@ namespace GymAPI.Controllers
         }
 
         [HttpPut("usuarios/{id}")]
-        public async Task<ActionResult<ApiResponse<bool>>> UpdateUser(int id, UsuarioUpdateDTO userDTO)
+        public async Task<ActionResult<ApiResponse<bool>>> UpdateUser(int id, [FromBody] JsonElement requestBody)
         {
             if (!await IsCurrentUserAdmin())
                 return Forbid();
 
             try
             {
+                // 🔍 DEBUGGING: Log completo del request
+                var requestBodyString = requestBody.GetRawText();
+                _logger.LogInformation("🔍 REQUEST BODY RAW: {RequestBody}", requestBodyString);
+
+                // 🔍 PARSING MANUAL de los campos
+                string? nombre = null;
+                string? apellido = null; 
+                string? email = null;
+                string? password = null;
+                int? edad = null;
+                float? altura = null;
+                float? peso = null;
+                bool? esAdmin = null;
+                bool? estaActivo = null;
+
+                if (requestBody.TryGetProperty("nombre", out var nombreProperty))
+                    nombre = nombreProperty.GetString();
+                
+                if (requestBody.TryGetProperty("apellido", out var apellidoProperty))
+                    apellido = apellidoProperty.GetString();
+                
+                if (requestBody.TryGetProperty("email", out var emailProperty))
+                    email = emailProperty.GetString();
+                
+                if (requestBody.TryGetProperty("password", out var passwordProperty))
+                    password = passwordProperty.GetString();
+                
+                if (requestBody.TryGetProperty("edad", out var edadProperty) && edadProperty.ValueKind == JsonValueKind.Number)
+                    edad = edadProperty.GetInt32();
+                
+                if (requestBody.TryGetProperty("altura", out var alturaProperty) && alturaProperty.ValueKind == JsonValueKind.Number)
+                    altura = (float)alturaProperty.GetDouble();
+                
+                if (requestBody.TryGetProperty("peso", out var pesoProperty) && pesoProperty.ValueKind == JsonValueKind.Number)
+                    peso = (float)pesoProperty.GetDouble();
+                
+                // 🚨 CAMPOS CRÍTICOS
+                if (requestBody.TryGetProperty("esAdmin", out var esAdminProperty))
+                {
+                    if (esAdminProperty.ValueKind == JsonValueKind.True)
+                        esAdmin = true;
+                    else if (esAdminProperty.ValueKind == JsonValueKind.False)
+                        esAdmin = false;
+                }
+                
+                if (requestBody.TryGetProperty("estaActivo", out var estaActivoProperty))
+                {
+                    if (estaActivoProperty.ValueKind == JsonValueKind.True)
+                        estaActivo = true;
+                    else if (estaActivoProperty.ValueKind == JsonValueKind.False)
+                        estaActivo = false;
+                }
+
+                _logger.LogInformation("🔍 DATOS PARSEADOS: Nombre={Nombre}, Apellido={Apellido}, Email={Email}, EsAdmin={EsAdmin}, EstaActivo={EstaActivo}", 
+                    nombre, apellido, email, esAdmin, estaActivo);
+
                 _logger.LogInformation("🔥 Actualizando usuario ID: {UsuarioID}", id);
 
                 var usuario = await _usuarioService.GetByIdAsync(id);
@@ -173,21 +230,94 @@ namespace GymAPI.Controllers
                     });
                 }
 
-                if (!string.IsNullOrEmpty(userDTO.Nombre))
-                    usuario.Nombre = userDTO.Nombre;
-                if (!string.IsNullOrEmpty(userDTO.Apellido))
-                    usuario.Apellido = userDTO.Apellido;
-                if (!string.IsNullOrEmpty(userDTO.Email))
-                    usuario.Email = userDTO.Email;
-
-                if (!string.IsNullOrEmpty(userDTO.Password))
+                // Guardar estado anterior para logging
+                var estadoAnterior = new
                 {
-                    usuario.Password = BCrypt.Net.BCrypt.HashPassword(userDTO.Password);
+                    EsAdmin = usuario.EsAdmin,
+                    EstaActivo = usuario.EstaActivo,
+                    Nombre = usuario.Nombre,
+                    Apellido = usuario.Apellido,
+                    Email = usuario.Email
+                };
+
+                _logger.LogInformation("🔍 ESTADO ANTERIOR: EsAdmin={EsAdmin}, EstaActivo={EstaActivo}", 
+                    estadoAnterior.EsAdmin, estadoAnterior.EstaActivo);
+
+                // Actualizar campos básicos
+                if (!string.IsNullOrEmpty(nombre))
+                {
+                    _logger.LogInformation("🔄 Actualizando Nombre: {Anterior} -> {Nuevo}", usuario.Nombre, nombre);
+                    usuario.Nombre = nombre;
+                }
+                
+                if (!string.IsNullOrEmpty(apellido))
+                {
+                    _logger.LogInformation("🔄 Actualizando Apellido: {Anterior} -> {Nuevo}", usuario.Apellido, apellido);
+                    usuario.Apellido = apellido;
+                }
+                
+                if (!string.IsNullOrEmpty(email))
+                {
+                    _logger.LogInformation("🔄 Actualizando Email: {Anterior} -> {Nuevo}", usuario.Email, email);
+                    usuario.Email = email;
                 }
 
+                // Actualizar contraseña si se proporciona
+                if (!string.IsNullOrEmpty(password))
+                {
+                    _logger.LogInformation("🔐 Actualizando contraseña para usuario {UsuarioID}", id);
+                    usuario.Password = BCrypt.Net.BCrypt.HashPassword(password);
+                }
+
+                // 🚨 CAMPOS CRÍTICOS DE ADMINISTRADOR
+                if (esAdmin.HasValue)
+                {
+                    _logger.LogInformation("🔒 *** ACTUALIZANDO EsAdmin *** de {ValorAnterior} a {ValorNuevo} para usuario {UsuarioID}", 
+                        estadoAnterior.EsAdmin, esAdmin.Value, id);
+                    usuario.EsAdmin = esAdmin.Value;
+                }
+                else
+                {
+                    _logger.LogWarning("⚠️ EsAdmin NO se recibió en el DTO (es null)");
+                }
+
+                if (estaActivo.HasValue)
+                {
+                    _logger.LogInformation("🔄 *** ACTUALIZANDO EstaActivo *** de {ValorAnterior} a {ValorNuevo} para usuario {UsuarioID}", 
+                        estadoAnterior.EstaActivo, estaActivo.Value, id);
+                    usuario.EstaActivo = estaActivo.Value;
+                }
+                else
+                {
+                    _logger.LogWarning("⚠️ EstaActivo NO se recibió en el DTO (es null)");
+                }
+
+                // Campos opcionales de perfil
+                if (edad.HasValue)
+                    usuario.Edad = edad.Value;
+                if (altura.HasValue)
+                    usuario.Altura = altura.Value;
+                if (peso.HasValue)
+                    usuario.Peso = peso.Value;
+
+                _logger.LogInformation("🔍 ANTES DE GUARDAR: EsAdmin={EsAdmin}, EstaActivo={EstaActivo}", 
+                    usuario.EsAdmin, usuario.EstaActivo);
+
+                // 💾 GUARDAR EN BASE DE DATOS
                 await _usuarioService.UpdateAsync(usuario);
 
-                _logger.LogInformation("✅ Usuario actualizado exitosamente: {UsuarioID}", id);
+                _logger.LogInformation("💾 GUARDADO EN BASE DE DATOS COMPLETADO");
+
+                // 🔍 VERIFICAR QUE SE GUARDÓ CORRECTAMENTE
+                var usuarioActualizado = await _usuarioService.GetByIdAsync(id);
+                _logger.LogInformation("✅ VERIFICACIÓN POST-ACTUALIZACIÓN: Usuario {UsuarioID} - EsAdmin: {EsAdmin}, EstaActivo: {EstaActivo}", 
+                    id, usuarioActualizado?.EsAdmin, usuarioActualizado?.EstaActivo);
+
+                if (usuarioActualizado?.EsAdmin != esAdmin)
+                {
+                    _logger.LogError("🚨 ERROR: EsAdmin NO se actualizó correctamente. Esperado: {Esperado}, Actual: {Actual}", 
+                        esAdmin, usuarioActualizado?.EsAdmin);
+                }
 
                 return Ok(new ApiResponse<bool>
                 {
@@ -310,7 +440,7 @@ namespace GymAPI.Controllers
         }
 
         [HttpPost("ejercicios")]
-        public async Task<ActionResult<ApiResponse<EjercicioDTO>>> CreateExercise(EjercicioCreateDTO ejercicioDTO)
+        public async Task<ActionResult<ApiResponse<EjercicioDTO>>> CreateExercise([FromBody] EjercicioCreateDTO ejercicioDTO)
         {
             if (!await IsCurrentUserAdmin())
                 return Forbid();
@@ -359,7 +489,7 @@ namespace GymAPI.Controllers
         }
 
         [HttpPut("ejercicios/{id}")]
-        public async Task<ActionResult<ApiResponse<bool>>> UpdateExercise(int id, EjercicioUpdateDTO ejercicioDTO)
+        public async Task<ActionResult<ApiResponse<bool>>> UpdateExercise(int id, [FromBody] EjercicioUpdateDTO ejercicioDTO)
         {
             if (!await IsCurrentUserAdmin())
                 return Forbid();
@@ -478,346 +608,6 @@ namespace GymAPI.Controllers
             }
         }
 
-        [HttpGet("entrenamientos/{id}")]
-        public async Task<ActionResult<ApiResponse<EntrenamientoDTO>>> GetWorkout(int id)
-        {
-            if (!await IsCurrentUserAdmin())
-                return Forbid();
-
-            try
-            {
-                var entrenamiento = await _entrenamientoService.GetByIdAsync(id);
-                if (entrenamiento == null)
-                {
-                    return NotFound(new ApiResponse<EntrenamientoDTO>
-                    {
-                        Success = false,
-                        Message = "Entrenamiento no encontrado"
-                    });
-                }
-
-                var entrenamientoDTO = new EntrenamientoDTO
-                {
-                    EntrenamientoID = entrenamiento.EntrenamientoID,
-                    Titulo = entrenamiento.Titulo,
-                    Descripcion = entrenamiento.Descripcion,
-                    DuracionMinutos = entrenamiento.DuracionMinutos,
-                    Dificultad = entrenamiento.Dificultad,
-                    ImagenURL = entrenamiento.ImagenURL,
-                    FechaCreacion = entrenamiento.FechaCreacion,
-                    Publico = entrenamiento.Publico,
-                    AutorID = entrenamiento.AutorID
-                };
-
-                return Ok(new ApiResponse<EntrenamientoDTO>
-                {
-                    Success = true,
-                    Data = entrenamientoDTO
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener entrenamiento {EntrenamientoID}", id);
-                return StatusCode(500, new ApiResponse<EntrenamientoDTO>
-                {
-                    Success = false,
-                    Message = $"Error interno del servidor: {ex.Message}"
-                });
-            }
-        }
-
-        // NUEVO: Crear entrenamiento completo con ejercicios como el controlador normal
-        [HttpPost("entrenamientos")]
-        public async Task<ActionResult<ApiResponse<EntrenamientoDTO>>> CreateWorkout([FromForm] AdminEntrenamientoCreateRequest request)
-        {
-            if (!await IsCurrentUserAdmin())
-                return Forbid();
-
-            try
-            {
-                _logger.LogInformation("🔥 Admin creando entrenamiento: {Titulo}", request.Titulo);
-
-                // Obtener el ID del usuario administrador
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (!int.TryParse(userIdClaim, out int userId))
-                {
-                    return Unauthorized(new ApiResponse<EntrenamientoDTO>
-                    {
-                        Success = false,
-                        Message = "Usuario no autorizado"
-                    });
-                }
-
-                // Crear el entrenamiento base
-                var entrenamiento = new Entrenamiento
-                {
-                    Titulo = request.Titulo,
-                    Descripcion = request.Descripcion ?? "",
-                    DuracionMinutos = request.DuracionMinutos,
-                    Dificultad = request.Dificultad,
-                    FechaCreacion = DateTime.Now,
-                    Publico = request.Publico,
-                    AutorID = userId
-                };
-
-                // Procesar la imagen si se proporciona
-                if (request.Imagen != null)
-                {
-                    if (!FileValidationHelper.ValidateImageFile(request.Imagen, out string errorMessage))
-                    {
-                        return BadRequest(new ApiResponse<EntrenamientoDTO>
-                        {
-                            Success = false,
-                            Message = errorMessage
-                        });
-                    }
-
-                    // Subir imagen a Cloudinary
-                    string imageUrl = await _imageService.UploadImageAsync(request.Imagen);
-                    entrenamiento.ImagenURL = imageUrl;
-                }
-
-                // Guardar el entrenamiento en la base de datos
-                await _entrenamientoService.AddAsync(entrenamiento);
-
-                // Procesar los ejercicios relacionados
-                if (request.Ejercicios != null && request.Ejercicios.Any())
-                {
-                    foreach (var ejercicio in request.Ejercicios)
-                    {
-                        var entrenamientoEjercicio = new EntrenamientoEjercicio
-                        {
-                            EntrenamientoID = entrenamiento.EntrenamientoID,
-                            EjercicioID = ejercicio.EjercicioID,
-                            Series = ejercicio.Series,
-                            Repeticiones = ejercicio.Repeticiones,
-                            DescansoSegundos = ejercicio.DescansoSegundos,
-                            Notas = ejercicio.Notas
-                        };
-
-                        await _entrenamientoEjercicioService.AddAsync(entrenamientoEjercicio);
-                    }
-                }
-
-                var entrenamientoResponse = new EntrenamientoDTO
-                {
-                    EntrenamientoID = entrenamiento.EntrenamientoID,
-                    Titulo = entrenamiento.Titulo,
-                    Descripcion = entrenamiento.Descripcion,
-                    DuracionMinutos = entrenamiento.DuracionMinutos,
-                    Dificultad = entrenamiento.Dificultad,
-                    ImagenURL = entrenamiento.ImagenURL,
-                    FechaCreacion = entrenamiento.FechaCreacion,
-                    Publico = entrenamiento.Publico,
-                    AutorID = entrenamiento.AutorID
-                };
-
-                _logger.LogInformation("✅ Admin - Entrenamiento creado exitosamente: {EntrenamientoID}", entrenamiento.EntrenamientoID);
-
-                return Ok(new ApiResponse<EntrenamientoDTO>
-                {
-                    Success = true,
-                    Data = entrenamientoResponse,
-                    Message = "Entrenamiento creado correctamente"
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Error inesperado al crear entrenamiento de admin");
-                return StatusCode(500, new ApiResponse<EntrenamientoDTO>
-                {
-                    Success = false,
-                    Message = $"Error al crear entrenamiento: {ex.Message}"
-                });
-            }
-        }
-
-        // ACTUALIZADO: Actualizar entrenamiento completo con ejercicios
-        [HttpPut("entrenamientos/{id}")]
-        public async Task<ActionResult<ApiResponse<bool>>> UpdateWorkout(int id, [FromForm] AdminEntrenamientoUpdateRequest request)
-        {
-            if (!await IsCurrentUserAdmin())
-                return Forbid();
-
-            try
-            {
-                _logger.LogInformation("🔥 Admin actualizando entrenamiento ID: {EntrenamientoID}", id);
-
-                var entrenamiento = await _entrenamientoService.GetByIdAsync(id);
-                if (entrenamiento == null)
-                {
-                    return NotFound(new ApiResponse<bool>
-                    {
-                        Success = false,
-                        Message = "Entrenamiento no encontrado"
-                    });
-                }
-
-                // Actualizar propiedades básicas solo si se proporcionan
-                if (!string.IsNullOrEmpty(request.Titulo))
-                    entrenamiento.Titulo = request.Titulo;
-                if (!string.IsNullOrEmpty(request.Descripcion))
-                    entrenamiento.Descripcion = request.Descripcion;
-                if (request.DuracionMinutos.HasValue)
-                    entrenamiento.DuracionMinutos = request.DuracionMinutos.Value;
-                if (!string.IsNullOrEmpty(request.Dificultad))
-                    entrenamiento.Dificultad = request.Dificultad;
-                if (request.Publico.HasValue)
-                    entrenamiento.Publico = request.Publico.Value;
-
-                // Procesar nueva imagen si se proporciona
-                if (request.Imagen != null)
-                {
-                    if (!FileValidationHelper.ValidateImageFile(request.Imagen, out string errorMessage))
-                    {
-                        return BadRequest(new ApiResponse<bool>
-                        {
-                            Success = false,
-                            Message = errorMessage
-                        });
-                    }
-
-                    // Eliminar imagen anterior si existe
-                    if (!string.IsNullOrEmpty(entrenamiento.ImagenURL))
-                    {
-                        try
-                        {
-                            var uri = new Uri(entrenamiento.ImagenURL);
-                            var pathSegments = uri.PathAndQuery.Split('/');
-                            string fileName = pathSegments.Last().Split('.')[0];
-                            string publicId = $"entrenamientos/{fileName}";
-                            await _imageService.DeleteImageAsync(publicId);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning("Error al eliminar imagen anterior: {Message}", ex.Message);
-                        }
-                    }
-
-                    // Subir nueva imagen
-                    string imageUrl = await _imageService.UploadImageAsync(request.Imagen);
-                    entrenamiento.ImagenURL = imageUrl;
-                }
-
-                // Actualizar entrenamiento
-                await _entrenamientoService.UpdateAsync(entrenamiento);
-
-                // Si hay ejercicios nuevos, eliminar los antiguos y añadir los nuevos
-                if (request.Ejercicios != null && request.Ejercicios.Any())
-                {
-                    // Eliminar ejercicios existentes
-                    var ejerciciosExistentes = await _entrenamientoEjercicioService.GetByEntrenamientoAsync(id);
-                    foreach (var ejercicioExistente in ejerciciosExistentes)
-                    {
-                        await _entrenamientoEjercicioService.RemoveAsync(ejercicioExistente.EntrenamientoID, ejercicioExistente.EjercicioID);
-                    }
-
-                    // Añadir nuevos ejercicios
-                    foreach (var ejercicio in request.Ejercicios)
-                    {
-                        var entrenamientoEjercicio = new EntrenamientoEjercicio
-                        {
-                            EntrenamientoID = entrenamiento.EntrenamientoID,
-                            EjercicioID = ejercicio.EjercicioID,
-                            Series = ejercicio.Series,
-                            Repeticiones = ejercicio.Repeticiones,
-                            DescansoSegundos = ejercicio.DescansoSegundos,
-                            Notas = ejercicio.Notas
-                        };
-
-                        await _entrenamientoEjercicioService.AddAsync(entrenamientoEjercicio);
-                    }
-                }
-
-                _logger.LogInformation("✅ Admin - Entrenamiento actualizado exitosamente: {EntrenamientoID}", id);
-
-                return Ok(new ApiResponse<bool>
-                {
-                    Success = true,
-                    Data = true,
-                    Message = "Entrenamiento actualizado correctamente"
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Error inesperado al actualizar entrenamiento {EntrenamientoID}", id);
-                return StatusCode(500, new ApiResponse<bool>
-                {
-                    Success = false,
-                    Message = $"Error al actualizar entrenamiento: {ex.Message}"
-                });
-            }
-        }
-
-        [HttpDelete("entrenamientos/{id}")]
-        public async Task<ActionResult<ApiResponse<bool>>> DeleteWorkout(int id)
-        {
-            if (!await IsCurrentUserAdmin())
-                return Forbid();
-
-            try
-            {
-                _logger.LogInformation("🔥 Eliminando entrenamiento ID: {EntrenamientoID}", id);
-
-                var entrenamiento = await _entrenamientoService.GetByIdAsync(id);
-                if (entrenamiento == null)
-                {
-                    return NotFound(new ApiResponse<bool>
-                    {
-                        Success = false,
-                        Message = "Entrenamiento no encontrado"
-                    });
-                }
-
-                // Eliminar la imagen si existe
-                if (!string.IsNullOrEmpty(entrenamiento.ImagenURL))
-                {
-                    try
-                    {
-                        var uri = new Uri(entrenamiento.ImagenURL);
-                        var pathSegments = uri.PathAndQuery.Split('/');
-                        string fileName = pathSegments.Last().Split('.')[0];
-                        string publicId = $"entrenamientos/{fileName}";
-                        await _imageService.DeleteImageAsync(publicId);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning("Error al eliminar imagen: {Message}", ex.Message);
-                    }
-                }
-
-                // Eliminar los ejercicios relacionados
-                var ejercicios = await _entrenamientoEjercicioService.GetByEntrenamientoAsync(id);
-                foreach (var ejercicio in ejercicios)
-                {
-                    await _entrenamientoEjercicioService.RemoveAsync(ejercicio.EntrenamientoID, ejercicio.EjercicioID);
-                }
-
-                // Eliminar el entrenamiento
-                await _entrenamientoService.DeleteAsync(id);
-
-                _logger.LogInformation("✅ Entrenamiento eliminado exitosamente: {EntrenamientoID}", id);
-
-                return Ok(new ApiResponse<bool>
-                {
-                    Success = true,
-                    Data = true,
-                    Message = "Entrenamiento eliminado correctamente"
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Error al eliminar entrenamiento {EntrenamientoID}", id);
-                return StatusCode(500, new ApiResponse<bool>
-                {
-                    Success = false,
-                    Message = $"Error al eliminar entrenamiento: {ex.Message}"
-                });
-            }
-        }
-
-        // ============ DASHBOARD INFO MEJORADO ============
-
         [HttpGet("dashboard")]
         public async Task<ActionResult<ApiResponse<object>>> GetDashboardInfo()
         {
@@ -855,29 +645,5 @@ namespace GymAPI.Controllers
                 });
             }
         }
-    }
-
-    // DTO para la solicitud de creación de entrenamiento de admin
-    public class AdminEntrenamientoCreateRequest
-    {
-        public string Titulo { get; set; } = "";
-        public string? Descripcion { get; set; }
-        public int DuracionMinutos { get; set; }
-        public string Dificultad { get; set; } = "";
-        public bool Publico { get; set; }
-        public IFormFile? Imagen { get; set; }
-        public List<EntrenamientoEjercicioCreateDTO>? Ejercicios { get; set; }
-    }
-
-    // DTO para la solicitud de actualización de entrenamiento de admin
-    public class AdminEntrenamientoUpdateRequest
-    {
-        public string? Titulo { get; set; }
-        public string? Descripcion { get; set; }
-        public int? DuracionMinutos { get; set; }
-        public string? Dificultad { get; set; }
-        public bool? Publico { get; set; }
-        public IFormFile? Imagen { get; set; }
-        public List<EntrenamientoEjercicioCreateDTO>? Ejercicios { get; set; }
     }
 }

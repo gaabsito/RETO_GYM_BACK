@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Text.Json;
 using GymAPI.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,7 +47,10 @@ var connectionString = builder.Configuration.GetConnectionString("GymappDB")
 
 // 🔹 Registrar los repositorios con la cadena de conexión
 builder.Services.AddScoped<IUsuarioRepository>(provider =>
-    new UsuarioRepository(connectionString));
+{
+    var logger = provider.GetService<ILogger<UsuarioRepository>>();
+    return new UsuarioRepository(connectionString, logger);
+});
 
 builder.Services.AddScoped<IEntrenamientoRepository>(provider =>
     new EntrenamientoRepository(connectionString));
@@ -83,8 +87,20 @@ builder.Services.AddScoped<IRutinaCompletadaService, RutinaCompletadaService>();
 builder.Services.AddScoped<ILogroService, LogroService>();
 builder.Services.AddScoped<IRolService, RolService>();
 
-// 🔹 Configurar controladores
-builder.Services.AddControllers();
+// 🔹 Configurar controladores con JSON options mejoradas
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // 🚨 CRÍTICO: Configurar JSON para que maneje correctamente camelCase del frontend
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+        options.JsonSerializerOptions.WriteIndented = true;
+        
+        // Permitir campos adicionales sin errores
+        options.JsonSerializerOptions.ReadCommentHandling = JsonCommentHandling.Skip;
+        options.JsonSerializerOptions.AllowTrailingCommas = true;
+    });
+
 builder.Services.AddEndpointsApiExplorer();
 
 // 🔹 Configurar Swagger para autenticación - SIEMPRE habilitado
