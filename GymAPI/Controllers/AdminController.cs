@@ -608,6 +608,356 @@ namespace GymAPI.Controllers
             }
         }
 
+        [HttpPost("entrenamientos")]
+        public async Task<ActionResult<ApiResponse<EntrenamientoDTO>>> CreateWorkout()
+        {
+            if (!await IsCurrentUserAdmin())
+                return Forbid();
+
+            try
+            {
+                _logger.LogInformation("🔥 Creando entrenamiento desde admin...");
+
+                // Obtener el ID del usuario actual
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userIdClaim, out int autorId))
+                {
+                    return BadRequest(new ApiResponse<EntrenamientoDTO>
+                    {
+                        Success = false,
+                        Message = "Usuario no válido"
+                    });
+                }
+
+                // Leer los datos del formulario
+                string titulo = Request.Form["Titulo"].FirstOrDefault() ?? "";
+                string descripcion = Request.Form["Descripcion"].FirstOrDefault() ?? "";
+                string dificultad = Request.Form["Dificultad"].FirstOrDefault() ?? "";
+                bool publico = bool.Parse(Request.Form["Publico"].FirstOrDefault() ?? "true");
+                
+                if (!int.TryParse(Request.Form["DuracionMinutos"].FirstOrDefault(), out int duracionMinutos))
+                {
+                    return BadRequest(new ApiResponse<EntrenamientoDTO>
+                    {
+                        Success = false,
+                        Message = "Duración inválida"
+                    });
+                }
+
+                // Validaciones básicas
+                if (string.IsNullOrEmpty(titulo))
+                {
+                    return BadRequest(new ApiResponse<EntrenamientoDTO>
+                    {
+                        Success = false,
+                        Message = "El título es requerido"
+                    });
+                }
+
+                if (!new[] { "Fácil", "Media", "Difícil" }.Contains(dificultad))
+                {
+                    return BadRequest(new ApiResponse<EntrenamientoDTO>
+                    {
+                        Success = false,
+                        Message = "Dificultad inválida"
+                    });
+                }
+
+                // Procesar imagen si se proporciona
+                string? imagenURL = null;
+                var imagen = Request.Form.Files["Imagen"];
+                if (imagen != null && imagen.Length > 0)
+                {
+                    // Validar la imagen
+                    if (!FileValidationHelper.ValidateImageFile(imagen, out string errorMessage))
+                    {
+                        return BadRequest(new ApiResponse<EntrenamientoDTO>
+                        {
+                            Success = false,
+                            Message = errorMessage
+                        });
+                    }
+
+                    // Subir imagen a Cloudinary
+                    imagenURL = await _imageService.UploadImageAsync(imagen);
+                    _logger.LogInformation("🖼️ Imagen subida: {ImagenURL}", imagenURL);
+                }
+
+                // Crear el entrenamiento
+                var entrenamiento = new Entrenamiento
+                {
+                    Titulo = titulo,
+                    Descripcion = descripcion,
+                    DuracionMinutos = duracionMinutos,
+                    Dificultad = dificultad,
+                    ImagenURL = imagenURL,
+                    Publico = publico,
+                    AutorID = autorId,
+                    FechaCreacion = DateTime.Now
+                };
+
+                await _entrenamientoRepository.AddAsync(entrenamiento);
+                _logger.LogInformation("✅ Entrenamiento creado con ID: {EntrenamientoID}", entrenamiento.EntrenamientoID);
+
+                // Procesar ejercicios si se proporcionan
+                await ProcessWorkoutExercises(entrenamiento.EntrenamientoID);
+
+                var entrenamientoResponse = new EntrenamientoDTO
+                {
+                    EntrenamientoID = entrenamiento.EntrenamientoID,
+                    Titulo = entrenamiento.Titulo,
+                    Descripcion = entrenamiento.Descripcion,
+                    DuracionMinutos = entrenamiento.DuracionMinutos,
+                    Dificultad = entrenamiento.Dificultad,
+                    ImagenURL = entrenamiento.ImagenURL,
+                    FechaCreacion = entrenamiento.FechaCreacion,
+                    Publico = entrenamiento.Publico,
+                    AutorID = entrenamiento.AutorID
+                };
+
+                return Ok(new ApiResponse<EntrenamientoDTO>
+                {
+                    Success = true,
+                    Data = entrenamientoResponse,
+                    Message = "Entrenamiento creado correctamente"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error al crear entrenamiento");
+                return StatusCode(500, new ApiResponse<EntrenamientoDTO>
+                {
+                    Success = false,
+                    Message = $"Error al crear entrenamiento: {ex.Message}"
+                });
+            }
+        }
+
+        [HttpPut("entrenamientos/{id}")]
+        public async Task<ActionResult<ApiResponse<bool>>> UpdateWorkout(int id)
+        {
+            if (!await IsCurrentUserAdmin())
+                return Forbid();
+
+            try
+            {
+                _logger.LogInformation("🔥 Actualizando entrenamiento ID: {EntrenamientoID}", id);
+
+                var entrenamiento = await _entrenamientoRepository.GetByIdAsync(id);
+                if (entrenamiento == null)
+                {
+                    return NotFound(new ApiResponse<bool>
+                    {
+                        Success = false,
+                        Message = "Entrenamiento no encontrado"
+                    });
+                }
+
+                // Leer los datos del formulario
+                string titulo = Request.Form["Titulo"].FirstOrDefault() ?? entrenamiento.Titulo;
+                string descripcion = Request.Form["Descripcion"].FirstOrDefault() ?? entrenamiento.Descripcion;
+                string dificultad = Request.Form["Dificultad"].FirstOrDefault() ?? entrenamiento.Dificultad;
+                bool publico = bool.Parse(Request.Form["Publico"].FirstOrDefault() ?? entrenamiento.Publico.ToString());
+                
+                if (int.TryParse(Request.Form["DuracionMinutos"].FirstOrDefault(), out int duracionMinutos))
+                {
+                    entrenamiento.DuracionMinutos = duracionMinutos;
+                }
+
+                // Actualizar campos básicos
+                entrenamiento.Titulo = titulo;
+                entrenamiento.Descripcion = descripcion;
+                entrenamiento.Dificultad = dificultad;
+                entrenamiento.Publico = publico;
+
+                // Procesar nueva imagen si se proporciona
+                var imagen = Request.Form.Files["Imagen"];
+                if (imagen != null && imagen.Length > 0)
+                {
+                    // Validar la imagen
+                    if (!FileValidationHelper.ValidateImageFile(imagen, out string errorMessage))
+                    {
+                        return BadRequest(new ApiResponse<bool>
+                        {
+                            Success = false,
+                            Message = errorMessage
+                        });
+                    }
+
+                    // Eliminar imagen anterior si existe
+                    if (!string.IsNullOrEmpty(entrenamiento.ImagenURL) && entrenamiento.ImagenURL.Contains("cloudinary.com"))
+                    {
+                        try
+                        {
+                            var uri = new Uri(entrenamiento.ImagenURL);
+                            var pathSegments = uri.PathAndQuery.Split('/');
+                            string fileName = pathSegments.Last().Split('.')[0];
+                            string publicId = $"entrenamientos/{fileName}";
+                            await _imageService.DeleteImageAsync(publicId);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning("⚠️ Error al eliminar imagen anterior: {Message}", ex.Message);
+                        }
+                    }
+
+                    // Subir nueva imagen
+                    entrenamiento.ImagenURL = await _imageService.UploadImageAsync(imagen);
+                    _logger.LogInformation("🖼️ Nueva imagen subida: {ImagenURL}", entrenamiento.ImagenURL);
+                }
+
+                // Actualizar el entrenamiento
+                await _entrenamientoRepository.UpdateAsync(entrenamiento);
+
+                // Actualizar ejercicios del entrenamiento
+                await ProcessWorkoutExercises(id);
+
+                _logger.LogInformation("✅ Entrenamiento actualizado exitosamente: {EntrenamientoID}", id);
+
+                return Ok(new ApiResponse<bool>
+                {
+                    Success = true,
+                    Data = true,
+                    Message = "Entrenamiento actualizado correctamente"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error al actualizar entrenamiento {EntrenamientoID}", id);
+                return StatusCode(500, new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = $"Error al actualizar entrenamiento: {ex.Message}"
+                });
+            }
+        }
+
+        [HttpDelete("entrenamientos/{id}")]
+        public async Task<ActionResult<ApiResponse<bool>>> DeleteWorkout(int id)
+        {
+            if (!await IsCurrentUserAdmin())
+                return Forbid();
+
+            try
+            {
+                _logger.LogInformation("🔥 INICIANDO eliminación de entrenamiento ID: {EntrenamientoID}", id);
+
+                // Verificar que el entrenamiento existe
+                var entrenamiento = await _entrenamientoRepository.GetByIdAsync(id);
+                if (entrenamiento == null)
+                {
+                    _logger.LogWarning("❌ Entrenamiento {EntrenamientoID} no encontrado", id);
+                    return NotFound(new ApiResponse<bool>
+                    {
+                        Success = false,
+                        Message = "Entrenamiento no encontrado"
+                    });
+                }
+
+                // Eliminar imagen asociada si existe
+                if (!string.IsNullOrEmpty(entrenamiento.ImagenURL))
+                {
+                    try
+                    {
+                        // Extraer el publicId de la URL de Cloudinary si es necesario
+                        // Solo intentar eliminar si parece ser una URL de Cloudinary
+                        if (entrenamiento.ImagenURL.Contains("cloudinary.com"))
+                        {
+                            var uri = new Uri(entrenamiento.ImagenURL);
+                            var pathSegments = uri.PathAndQuery.Split('/');
+                            if (pathSegments.Length > 0)
+                            {
+                                string fileName = pathSegments.Last().Split('.')[0];
+                                string publicId = $"entrenamientos/{fileName}";
+                                await _imageService.DeleteImageAsync(publicId);
+                                _logger.LogInformation("🖼️ Imagen eliminada: {PublicId}", publicId);
+                            }
+                        }
+                    }
+                    catch (Exception imgEx)
+                    {
+                        // Log el error pero continúa con la eliminación del entrenamiento
+                        _logger.LogWarning("⚠️ Error al eliminar imagen del entrenamiento {EntrenamientoID}: {Message}", 
+                            id, imgEx.Message);
+                    }
+                }
+
+                // Eliminar el entrenamiento (esto también eliminará las relaciones en EntrenamientoEjercicios por CASCADE)
+                await _entrenamientoRepository.DeleteAsync(id);
+
+                _logger.LogInformation("✅ Entrenamiento eliminado exitosamente: {EntrenamientoID}", id);
+
+                return Ok(new ApiResponse<bool>
+                {
+                    Success = true,
+                    Data = true,
+                    Message = "Entrenamiento eliminado correctamente"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "💥 ERROR CRITICO al eliminar entrenamiento {EntrenamientoID}: {Message}", id, ex.Message);
+                return StatusCode(500, new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = $"Error al eliminar entrenamiento: {ex.Message}"
+                });
+            }
+        }
+
+        // Método helper para procesar ejercicios del entrenamiento
+        private async Task ProcessWorkoutExercises(int entrenamientoId)
+        {
+            try
+            {
+                // Eliminar ejercicios existentes
+                var ejerciciosExistentes = await _entrenamientoEjercicioService.GetByEntrenamientoIdAsync(entrenamientoId);
+                foreach (var ejercicioExistente in ejerciciosExistentes)
+                {
+                    await _entrenamientoEjercicioService.DeleteAsync(ejercicioExistente.EntrenamientoID, ejercicioExistente.EjercicioID);
+                }
+
+                // Procesar nuevos ejercicios
+                var ejerciciosCount = 0;
+                while (Request.Form.ContainsKey($"Ejercicios[{ejerciciosCount}].EjercicioID"))
+                {
+                    if (int.TryParse(Request.Form[$"Ejercicios[{ejerciciosCount}].EjercicioID"], out int ejercicioId) &&
+                        int.TryParse(Request.Form[$"Ejercicios[{ejerciciosCount}].Series"], out int series) &&
+                        int.TryParse(Request.Form[$"Ejercicios[{ejerciciosCount}].Repeticiones"], out int repeticiones) &&
+                        int.TryParse(Request.Form[$"Ejercicios[{ejerciciosCount}].DescansoSegundos"], out int descanso))
+                    {
+                        string notas = Request.Form[$"Ejercicios[{ejerciciosCount}].Notas"].FirstOrDefault() ?? "";
+
+                        var entrenamientoEjercicio = new EntrenamientoEjercicio
+                        {
+                            EntrenamientoID = entrenamientoId,
+                            EjercicioID = ejercicioId,
+                            Series = series,
+                            Repeticiones = repeticiones,
+                            DescansoSegundos = descanso,
+                            Notas = string.IsNullOrEmpty(notas) ? null : notas
+                        };
+
+                        await _entrenamientoEjercicioService.AddAsync(entrenamientoEjercicio);
+                        _logger.LogInformation("➕ Ejercicio agregado: {EjercicioID} al entrenamiento {EntrenamientoID}", 
+                            ejercicioId, entrenamientoId);
+                    }
+
+                    ejerciciosCount++;
+                }
+
+                _logger.LogInformation("✅ Procesados {Count} ejercicios para entrenamiento {EntrenamientoID}", 
+                    ejerciciosCount, entrenamientoId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error al procesar ejercicios del entrenamiento {EntrenamientoID}", entrenamientoId);
+                throw;
+            }
+        }
+
+        // ============ DASHBOARD ============
+
         [HttpGet("dashboard")]
         public async Task<ActionResult<ApiResponse<object>>> GetDashboardInfo()
         {

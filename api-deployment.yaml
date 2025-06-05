@@ -13,7 +13,7 @@ data:
       },
       "AllowedHosts": "*",
       "ConnectionStrings": {
-        "GymappDB": "Server=database-1.castcy5syqfx.us-east-1.rds.amazonaws.com;Database=GymappDB;User Id=SA;Password=YourStrongPassw0rd;TrustServerCertificate=True;"
+        "GymappDB": "Server=database-1.cgb9idzyd48b.us-east-1.rds.amazonaws.com;Database=GymappDB;User Id=sa;Password=YourStrongPassw0rd;TrustServerCertificate=True;"
       },
       "JwtSettings": {
         "SecretKey": "zxT3u9n6f8p1m4k7LQJHGFDSAWERTY_secureKey_2024",
@@ -91,7 +91,7 @@ metadata:
   annotations:
     # Configuración SSL para el backend
     service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
-    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:410591670317:certificate/c95e0321-db0d-4a4d-a114-8fada208282b
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:626153274627:certificate/d5a9e43e-114f-4494-b56d-4b982e2f5890
     service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
     service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: ELBSecurityPolicy-TLS-1-2-2017-01
 spec:
