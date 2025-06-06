@@ -230,67 +230,26 @@ namespace GymAPI.Controllers
                     });
                 }
 
-                // Guardar estado anterior para logging
-                var estadoAnterior = new
-                {
-                    EsAdmin = usuario.EsAdmin,
-                    EstaActivo = usuario.EstaActivo,
-                    Nombre = usuario.Nombre,
-                    Apellido = usuario.Apellido,
-                    Email = usuario.Email
-                };
-
-                _logger.LogInformation("🔍 ESTADO ANTERIOR: EsAdmin={EsAdmin}, EstaActivo={EstaActivo}", 
-                    estadoAnterior.EsAdmin, estadoAnterior.EstaActivo);
-
                 // Actualizar campos básicos
                 if (!string.IsNullOrEmpty(nombre))
-                {
-                    _logger.LogInformation("🔄 Actualizando Nombre: {Anterior} -> {Nuevo}", usuario.Nombre, nombre);
                     usuario.Nombre = nombre;
-                }
                 
                 if (!string.IsNullOrEmpty(apellido))
-                {
-                    _logger.LogInformation("🔄 Actualizando Apellido: {Anterior} -> {Nuevo}", usuario.Apellido, apellido);
                     usuario.Apellido = apellido;
-                }
                 
                 if (!string.IsNullOrEmpty(email))
-                {
-                    _logger.LogInformation("🔄 Actualizando Email: {Anterior} -> {Nuevo}", usuario.Email, email);
                     usuario.Email = email;
-                }
 
                 // Actualizar contraseña si se proporciona
                 if (!string.IsNullOrEmpty(password))
-                {
-                    _logger.LogInformation("🔐 Actualizando contraseña para usuario {UsuarioID}", id);
                     usuario.Password = BCrypt.Net.BCrypt.HashPassword(password);
-                }
 
                 // 🚨 CAMPOS CRÍTICOS DE ADMINISTRADOR
                 if (esAdmin.HasValue)
-                {
-                    _logger.LogInformation("🔒 *** ACTUALIZANDO EsAdmin *** de {ValorAnterior} a {ValorNuevo} para usuario {UsuarioID}", 
-                        estadoAnterior.EsAdmin, esAdmin.Value, id);
                     usuario.EsAdmin = esAdmin.Value;
-                }
-                else
-                {
-                    _logger.LogWarning("⚠️ EsAdmin NO se recibió en el DTO (es null)");
-                }
 
                 if (estaActivo.HasValue)
-                {
-                    _logger.LogInformation("🔄 *** ACTUALIZANDO EstaActivo *** de {ValorAnterior} a {ValorNuevo} para usuario {UsuarioID}", 
-                        estadoAnterior.EstaActivo, estaActivo.Value, id);
                     usuario.EstaActivo = estaActivo.Value;
-                }
-                else
-                {
-                    _logger.LogWarning("⚠️ EstaActivo NO se recibió en el DTO (es null)");
-                }
 
                 // Campos opcionales de perfil
                 if (edad.HasValue)
@@ -300,24 +259,8 @@ namespace GymAPI.Controllers
                 if (peso.HasValue)
                     usuario.Peso = peso.Value;
 
-                _logger.LogInformation("🔍 ANTES DE GUARDAR: EsAdmin={EsAdmin}, EstaActivo={EstaActivo}", 
-                    usuario.EsAdmin, usuario.EstaActivo);
-
                 // 💾 GUARDAR EN BASE DE DATOS
                 await _usuarioService.UpdateAsync(usuario);
-
-                _logger.LogInformation("💾 GUARDADO EN BASE DE DATOS COMPLETADO");
-
-                // 🔍 VERIFICAR QUE SE GUARDÓ CORRECTAMENTE
-                var usuarioActualizado = await _usuarioService.GetByIdAsync(id);
-                _logger.LogInformation("✅ VERIFICACIÓN POST-ACTUALIZACIÓN: Usuario {UsuarioID} - EsAdmin: {EsAdmin}, EstaActivo: {EstaActivo}", 
-                    id, usuarioActualizado?.EsAdmin, usuarioActualizado?.EstaActivo);
-
-                if (usuarioActualizado?.EsAdmin != esAdmin)
-                {
-                    _logger.LogError("🚨 ERROR: EsAdmin NO se actualizó correctamente. Esperado: {Esperado}, Actual: {Actual}", 
-                        esAdmin, usuarioActualizado?.EsAdmin);
-                }
 
                 return Ok(new ApiResponse<bool>
                 {
@@ -609,6 +552,7 @@ namespace GymAPI.Controllers
         }
 
         [HttpPost("entrenamientos")]
+        [Consumes("multipart/form-data")]
         public async Task<ActionResult<ApiResponse<EntrenamientoDTO>>> CreateWorkout()
         {
             if (!await IsCurrentUserAdmin())
@@ -629,7 +573,7 @@ namespace GymAPI.Controllers
                     });
                 }
 
-                // Leer los datos del formulario
+                // Leer los datos del formulario - usar las claves exactas del frontend
                 string titulo = Request.Form["Titulo"].FirstOrDefault() ?? "";
                 string descripcion = Request.Form["Descripcion"].FirstOrDefault() ?? "";
                 string dificultad = Request.Form["Dificultad"].FirstOrDefault() ?? "";
@@ -700,7 +644,7 @@ namespace GymAPI.Controllers
                 _logger.LogInformation("✅ Entrenamiento creado con ID: {EntrenamientoID}", entrenamiento.EntrenamientoID);
 
                 // Procesar ejercicios si se proporcionan
-                await ProcessWorkoutExercises(entrenamiento.EntrenamientoID);
+                await ProcessWorkoutExercisesForCreate(entrenamiento.EntrenamientoID);
 
                 var entrenamientoResponse = new EntrenamientoDTO
                 {
@@ -734,6 +678,7 @@ namespace GymAPI.Controllers
         }
 
         [HttpPut("entrenamientos/{id}")]
+        [Consumes("multipart/form-data")]
         public async Task<ActionResult<ApiResponse<bool>>> UpdateWorkout(int id)
         {
             if (!await IsCurrentUserAdmin())
@@ -753,27 +698,38 @@ namespace GymAPI.Controllers
                     });
                 }
 
-                // Leer los datos del formulario
-                string titulo = Request.Form["Titulo"].FirstOrDefault() ?? entrenamiento.Titulo;
-                string descripcion = Request.Form["Descripcion"].FirstOrDefault() ?? entrenamiento.Descripcion;
-                string dificultad = Request.Form["Dificultad"].FirstOrDefault() ?? entrenamiento.Dificultad;
-                bool publico = bool.Parse(Request.Form["Publico"].FirstOrDefault() ?? entrenamiento.Publico.ToString());
+                // Leer los datos del formulario - usar las claves exactas del frontend
+                string? titulo = Request.Form["Titulo"].FirstOrDefault();
+                string? descripcion = Request.Form["Descripcion"].FirstOrDefault();
+                string? dificultad = Request.Form["Dificultad"].FirstOrDefault();
                 
-                if (int.TryParse(Request.Form["DuracionMinutos"].FirstOrDefault(), out int duracionMinutos))
-                {
-                    entrenamiento.DuracionMinutos = duracionMinutos;
-                }
+                bool.TryParse(Request.Form["Publico"].FirstOrDefault(), out bool publico);
+                int.TryParse(Request.Form["DuracionMinutos"].FirstOrDefault(), out int duracionMinutos);
 
-                // Actualizar campos básicos
-                entrenamiento.Titulo = titulo;
-                entrenamiento.Descripcion = descripcion;
-                entrenamiento.Dificultad = dificultad;
+                _logger.LogInformation("📝 Datos recibidos - Titulo: {Titulo}, Descripcion: {Descripcion}, Dificultad: {Dificultad}, Publico: {Publico}, Duracion: {Duracion}",
+                    titulo, descripcion, dificultad, publico, duracionMinutos);
+
+                // Actualizar campos básicos solo si se proporcionan
+                if (!string.IsNullOrEmpty(titulo))
+                    entrenamiento.Titulo = titulo;
+
+                if (!string.IsNullOrEmpty(descripcion))
+                    entrenamiento.Descripcion = descripcion;
+
+                if (duracionMinutos > 0)
+                    entrenamiento.DuracionMinutos = duracionMinutos;
+
+                if (!string.IsNullOrEmpty(dificultad))
+                    entrenamiento.Dificultad = dificultad;
+
                 entrenamiento.Publico = publico;
 
                 // Procesar nueva imagen si se proporciona
                 var imagen = Request.Form.Files["Imagen"];
                 if (imagen != null && imagen.Length > 0)
                 {
+                    _logger.LogInformation("🖼️ Procesando nueva imagen: {FileName} ({Size} bytes)", imagen.FileName, imagen.Length);
+                    
                     // Validar la imagen
                     if (!FileValidationHelper.ValidateImageFile(imagen, out string errorMessage))
                     {
@@ -794,6 +750,7 @@ namespace GymAPI.Controllers
                             string fileName = pathSegments.Last().Split('.')[0];
                             string publicId = $"entrenamientos/{fileName}";
                             await _imageService.DeleteImageAsync(publicId);
+                            _logger.LogInformation("🗑️ Imagen anterior eliminada: {PublicId}", publicId);
                         }
                         catch (Exception ex)
                         {
@@ -806,11 +763,11 @@ namespace GymAPI.Controllers
                     _logger.LogInformation("🖼️ Nueva imagen subida: {ImagenURL}", entrenamiento.ImagenURL);
                 }
 
+                // Procesar ejercicios del entrenamiento
+                await ProcessWorkoutExercisesForUpdate(id);
+
                 // Actualizar el entrenamiento
                 await _entrenamientoRepository.UpdateAsync(entrenamiento);
-
-                // Actualizar ejercicios del entrenamiento
-                await ProcessWorkoutExercises(id);
 
                 _logger.LogInformation("✅ Entrenamiento actualizado exitosamente: {EntrenamientoID}", id);
 
@@ -905,19 +862,63 @@ namespace GymAPI.Controllers
             }
         }
 
-        // Método helper para procesar ejercicios del entrenamiento
-        private async Task ProcessWorkoutExercises(int entrenamientoId)
+        // Método helper para procesar ejercicios del entrenamiento en UPDATE
+        private async Task ProcessWorkoutExercisesForUpdate(int entrenamientoId)
         {
             try
             {
                 // Eliminar ejercicios existentes
-                var ejerciciosExistentes = await _entrenamientoEjercicioService.GetByEntrenamientoIdAsync(entrenamientoId);
+                var ejerciciosExistentes = await _entrenamientoEjercicioService.GetByEntrenamientoAsync(entrenamientoId);
                 foreach (var ejercicioExistente in ejerciciosExistentes)
                 {
-                    await _entrenamientoEjercicioService.DeleteAsync(ejercicioExistente.EntrenamientoID, ejercicioExistente.EjercicioID);
+                    await _entrenamientoEjercicioService.RemoveAsync(ejercicioExistente.EntrenamientoID, ejercicioExistente.EjercicioID);
                 }
 
                 // Procesar nuevos ejercicios
+                var ejerciciosCount = 0;
+                while (Request.Form.ContainsKey($"Ejercicios[{ejerciciosCount}].EjercicioID"))
+                {
+                    if (int.TryParse(Request.Form[$"Ejercicios[{ejerciciosCount}].EjercicioID"], out int ejercicioId) &&
+                        int.TryParse(Request.Form[$"Ejercicios[{ejerciciosCount}].Series"], out int series) &&
+                        int.TryParse(Request.Form[$"Ejercicios[{ejerciciosCount}].Repeticiones"], out int repeticiones) &&
+                        int.TryParse(Request.Form[$"Ejercicios[{ejerciciosCount}].DescansoSegundos"], out int descanso))
+                    {
+                        string notas = Request.Form[$"Ejercicios[{ejerciciosCount}].Notas"].FirstOrDefault() ?? "";
+
+                        var entrenamientoEjercicio = new EntrenamientoEjercicio
+                        {
+                            EntrenamientoID = entrenamientoId,
+                            EjercicioID = ejercicioId,
+                            Series = series,
+                            Repeticiones = repeticiones,
+                            DescansoSegundos = descanso,
+                            Notas = string.IsNullOrEmpty(notas) ? null : notas
+                        };
+
+                        await _entrenamientoEjercicioService.AddAsync(entrenamientoEjercicio);
+                        _logger.LogInformation("➕ Ejercicio agregado: {EjercicioID} al entrenamiento {EntrenamientoID}", 
+                            ejercicioId, entrenamientoId);
+                    }
+
+                    ejerciciosCount++;
+                }
+
+                _logger.LogInformation("✅ Procesados {Count} ejercicios para entrenamiento {EntrenamientoID}", 
+                    ejerciciosCount, entrenamientoId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error al procesar ejercicios del entrenamiento {EntrenamientoID}", entrenamientoId);
+                throw;
+            }
+        }
+
+        // Método helper para procesar ejercicios del entrenamiento en CREATE
+        private async Task ProcessWorkoutExercisesForCreate(int entrenamientoId)
+        {
+            try
+            {
+                // Procesar ejercicios
                 var ejerciciosCount = 0;
                 while (Request.Form.ContainsKey($"Ejercicios[{ejerciciosCount}].EjercicioID"))
                 {
@@ -975,7 +976,7 @@ namespace GymAPI.Controllers
                     UsuariosRegistradosHoy = await _usuarioService.GetUsersRegisteredTodayAsync(),
                     UsuariosRegistradosEsteMes = await _usuarioService.GetUsersRegisteredThisMonthAsync(),
                     TotalEjercicios = (await _ejercicioRepository.GetAllAsync()).Count,
-                    TotalEntrenamientos = (await _entrenamientoRepository.GetAllAsync()).Count,
+                    Total∫Entrenamientos = (await _entrenamientoRepository.GetAllAsync()).Count,
                     EntrenamientosPublicos = (await _entrenamientoRepository.GetAllAsync()).Count(e => e.Publico)
                 };
 
